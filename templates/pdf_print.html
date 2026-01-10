@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Product Information Sheet</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+<style>
+@page {
+    size: A4;
+    margin: 18mm 16mm;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: #1f2937;
+    line-height: 1.6;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* Avoid bad page splits */
+.no-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+/* OUTER WRAPPER */
+.container {
+    background: #f1f5f9;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+/* ================= HEADER ================= */
+.header {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    background: linear-gradient(90deg, #e5e7eb, #f8fafc);
+}
+
+.header-left {
+    padding: 26px;
+}
+
+.header-right {
+    padding: 26px;
+    text-align: right;
+    font-size: 9px;
+    color: #6b7280;
+}
+
+.brand {
+    font-family: 'Poppins', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.product-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    margin: 8px 0 6px;
+}
+
+.badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.badge {
+    background: #f3f4f6;
+    color: #374151;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+}
+
+.badge.price {
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
+/* ================= MAIN GRID ================= */
+.main {
+    display: grid;
+    grid-template-columns: 40% 56%;
+    gap: 4%;
+    padding: 26px;
+    background: #ffffff;
+}
+
+/* LEFT COLUMN */
+.img-box {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 16px;
+    height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+}
+
+.product-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.section-label {
+    background: #fee2e2;
+    color: #7f1d1d;
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 10px;
+}
+
+.overview-text {
+    color: #4b5563;
+    margin-bottom: 20px;
+}
+
+/* WARRANTY CARD */
+.card {
+    background: #f9fafb;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    margin-bottom: 18px;
+}
+
+.card-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+/* RIGHT COLUMN */
+.section-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #111827;
+    text-transform: uppercase;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+    margin-top: 25px;
+}
+.section-title.first { margin-top: 0; }
+
+.sales-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sales-list li {
+    position: relative;
+    padding-left: 20px;
+    margin-bottom: 8px;
+}
+
+.sales-list li::before {
+    content: "●";
+    position: absolute;
+    left: 0;
+    color: #991b1b;
+}
+
+/* SPEC TABLE */
+.specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+}
+
+.specs-table th,
+.specs-table td {
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.specs-table th {
+    color: #64748b;
+    width: 35%;
+    text-align: left;
+}
+
+/* ================= FOOTER ================= */
+.footer {
+    background: #374151;
+    color: #e5e7eb;
+    padding: 16px 26px;
+    font-size: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+.footer div:last-child {
+    text-align: right;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- HEADER -->
+<div class="header no-break">
+    <div class="header-left">
+        <div class="brand">{{ data.header_info.brand }}</div>
+        <div class="product-name">{{ data.header_info.product_name }}</div>
+
+        <div class="badges">
+            <span class="badge">Model: {{ data.header_info.model_number }}</span>
+            {% if data.header_info.price_estimate %}
+            <span class="badge price">Est: {{ data.header_info.price_estimate }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="header-right">
+        <div>INTERNAL DOCUMENT</div>
+        <div>Ref: PIS-{{ product.id }}</div>
+        <div>{{ date_generated }}</div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- LEFT -->
+<div>
+    <div class="img-box no-break">
+        {% if image_b64 %}
+            <img src="{{ image_b64 }}" class="product-image">
+        {% else %}
+            <div style="color:#cbd5e1;font-weight:600;">NO IMAGE</div>
+        {% endif %}
+    </div>
+
+    <div class="section-label">Overview</div>
+    <div class="overview-text">
+        {{ data.range_overview }}
+    </div>
+
+    <div class="card no-break">
+        <div class="card-title">Warranty</div>
+        <strong>Period:</strong> {{ data.warranty_service.period }}<br>
+        <strong>Coverage:</strong> {{ data.warranty_service.coverage }}
+    </div>
+</div>
+
+<!-- RIGHT -->
+<div>
+    <div class="section-title first">Key Highlights</div>
+    <ul class="sales-list">
+        {% for arg in data.sales_arguments %}
+        <li>{{ arg }}</li>
+        {% endfor %}
+    </ul>
+
+    <div class="section-title">Technical Specifications</div>
+    <table class="specs-table">
+        {% for key, value in data.technical_specifications.items() %}
+        <tr>
+            <th>{{ key }}</th>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+    <div><strong>Point of Contact</strong><br>J. Kalachand</div>
+    <div>Generated {{ date_generated }}</div>
+</div>
+
+</div>
+
+</body>
+</html>

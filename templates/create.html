@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10">
+    
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden relative">
+        <div class="px-8 py-6 border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-2xl font-bold text-gray-800">New Product Extraction</h2>
+            <p class="text-gray-500 text-sm mt-1">Upload documents and let AI generate your PIS.</p>
+        </div>
+        
+        <form id="pisForm" class="p-8 space-y-8">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Model Name</label>
+                    <input type="text" name="model_name" placeholder="e.g. Samsung 55' OLED" required 
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-gray-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Visual Image (Dashboard Only)</label>
+                    <input type="file" name="product_image" accept="image/*"
+                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Supplier URL (Deep Research)</label>
+                <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:bg-white transition-all">
+                    <span class="pl-4 text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                    </span>
+                    <input type="url" name="supplier_url" placeholder="https://..." 
+                        class="w-full px-4 py-3 bg-transparent outline-none text-gray-800">
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-end mb-2">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Technical Documents (PDF/Docs)</label>
+                    <span id="doc-count-badge" class="hidden text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                        0 Documents Uploaded
+                    </span>
+                </div>
+
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 hover:border-blue-400 transition-all group cursor-pointer relative">
+                    <input type="file" id="ai_document_input" name="ai_document" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    </div>
+                    <p class="text-sm font-medium text-gray-700">Click to upload or drag and drop</p>
+                    <p class="text-xs text-gray-400 mt-1">PDF, DOCX, JPG supported for AI Analysis</p>
+                </div>
+
+                <div id="file-preview-area" class="mt-4 hidden space-y-2"></div>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold text-gray-900 uppercase tracking-wide">Document Contains Images?</span>
+                    <span class="text-xs text-gray-500">Enable AI visual scanning if product photos are in the file.</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="contains_images" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+            <button type="submit" class="w-full bg-black hover:bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                <span>Start Generation</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </button>
+        </form>
+        
+        <div id="progressOverlay" class="hidden absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col justify-center items-center p-10">
+            <div class="w-full max-w-md text-center">
+                <div class="mb-8 relative mx-auto w-24 h-24">
+                    <div class="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-75"></div>
+                    <div class="relative bg-white p-6 rounded-full shadow-lg border border-blue-50">
+                        <svg class="w-12 h-12 text-blue-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Generating PIS</h3>
+                <p id="statusMessage" class="text-gray-500 mb-8 h-6">Preparing environment...</p>
+
+                <div class="w-full bg-gray-100 rounded-full h-3 mb-4 overflow-hidden">
+                    <div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-500 ease-out" style="width: 5%"></div>
+                </div>
+                
+                <p class="text-xs text-gray-400">Do not close this window</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const docInput = document.getElementById('ai_document_input');
+const docCountBadge = document.getElementById('doc-count-badge');
+const filePreviewArea = document.getElementById('file-preview-area');
+
+docInput.addEventListener('change', function(e) {
+    const files = e.target.files;
+    
+    if (files.length > 0) {
+        docCountBadge.textContent = `${files.length} Document${files.length > 1 ? 's' : ''} Ready`;
+        docCountBadge.classList.remove('hidden');
+        filePreviewArea.classList.remove('hidden');
+        filePreviewArea.innerHTML = '';
+
+        const file = files[0];
+        const fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+        
+        const html = `
+            <div class="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-lg animate-fade-in">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-white rounded-md text-blue-500 shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800 truncate max-w-xs">${file.name}</p>
+                        <p class="text-xs text-gray-500">${fileSize}</p>
+                    </div>
+                </div>
+                <button type="button" onclick="clearFiles()" class="text-gray-400 hover:text-red-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        `;
+        filePreviewArea.insertAdjacentHTML('beforeend', html);
+
+    } else {
+        clearFiles();
+    }
+});
+
+function clearFiles() {
+    docInput.value = '';
+    docCountBadge.classList.add('hidden');
+    filePreviewArea.classList.add('hidden');
+    filePreviewArea.innerHTML = '';
+}
+
+document.getElementById('pisForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const overlay = document.getElementById('progressOverlay');
+    const progressBar = document.getElementById('progressBar');
+    const statusMessage = document.getElementById('statusMessage');
+    
+    overlay.classList.remove('hidden');
+    
+    const formData = new FormData(this);
+
+    try {
+        const response = await fetch("{{ url_for('create_pis') }}", {
+            method: 'POST',
+            body: formData
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const data = JSON.parse(line);
+                    
+                    if (data.progress) progressBar.style.width = data.progress + '%';
+                    if (data.message) statusMessage.textContent = data.message;
+                    if (data.redirect) window.location.href = data.redirect;
+                    if (data.error) {
+                        statusMessage.textContent = "Error: " + data.error;
+                        statusMessage.classList.add('text-red-600');
+                        progressBar.classList.add('bg-red-500');
+                    }
+                } catch (err) { console.error(err); }
+            }
+        }
+    } catch (error) {
+        statusMessage.textContent = "System Error Occurred";
+    }
+});
+</script>
+{% endblock %}

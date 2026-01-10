@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-12" x-data="{ isProcessing: false, progress: 0, statusMessage: 'Preparing...' }">
+    
+    <div class="text-center mb-10">
+        <h2 class="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">Bulk PIS Creation</h2>
+        <p class="text-lg text-gray-500">Upload a catalog or product list to generate multiple PIS drafts at once.</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden relative">
+        
+        <div x-show="isProcessing" class="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8 transition-opacity">
+            <div class="w-full max-w-xs bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
+                <div class="bg-blue-600 h-3 rounded-full transition-all duration-500 ease-out" :style="`width: ${progress}%`"></div>
+            </div>
+            <p class="text-lg font-bold text-gray-800 animate-pulse" x-text="statusMessage"></p>
+            <p class="text-sm text-gray-400 mt-2">Do not close this window.</p>
+        </div>
+
+        <form id="uploadForm" class="p-8 space-y-8" @submit.prevent="submitForm">
+            
+            <div class="space-y-4">
+                <label class="block text-sm font-bold text-gray-900 uppercase tracking-wide">
+                    Product Catalog / Document (PDF, CSV, Image)
+                </label>
+                <div class="relative group">
+                    <input type="file" name="ai_document" id="ai_document" required 
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all cursor-pointer border border-gray-200 rounded-xl bg-gray-50 p-1">
+                </div>
+                <p class="text-xs text-gray-400">Upload a document containing multiple products.</p>
+            </div>
+
+            <div class="space-y-4">
+                <label class="block text-sm font-bold text-gray-900 uppercase tracking-wide">
+                    Supplier / Category URL <span class="text-gray-400 font-normal normal-case">(Optional Context)</span>
+                </label>
+                <input type="url" name="supplier_url" placeholder="https://supplier.com/category-page" 
+                       class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold text-gray-900 uppercase tracking-wide">Document Contains Images?</span>
+                    <span class="text-xs text-gray-500">Enable PDF scanning for all items in the list.</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="contains_images" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+            <div class="pt-4">
+                <button type="submit" 
+                        class="w-full py-4 bg-black text-white font-bold rounded-xl shadow-lg hover:bg-gray-800 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                    Extract & Generate All Products
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+    async function submitForm(e) {
+        const form = e.target;
+        const formData = new FormData(form);
+        const alpineData = Alpine.$data(form);
+
+        alpineData.isProcessing = true;
+        alpineData.progress = 5;
+        alpineData.statusMessage = "Uploading file...";
+
+        try {
+            const response = await fetch("{{ url_for('create_bulk') }}", {
+                method: 'POST',
+                body: formData
+            });
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.trim()) {
+                        try {
+                            const data = JSON.parse(line);
+                            if (data.progress) alpineData.progress = data.progress;
+                            if (data.message) alpineData.statusMessage = data.message;
+                            if (data.redirect) window.location.href = data.redirect;
+                            if (data.error) {
+                                alert("Error: " + data.error);
+                                alpineData.isProcessing = false;
+                            }
+                        } catch (e) { console.error("Parse error", e); }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred during upload.");
+            alpineData.isProcessing = false;
+        }
+    }
+</script>
+{% endblock %}

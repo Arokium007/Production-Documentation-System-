@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Product Specification</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+<style>
+@page {
+    size: A4;
+    margin: 18mm 16mm;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    color: #1f2937;
+    line-height: 1.6;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* Prevent ugly page splits */
+.no-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+/* OUTER WRAPPER (controls background height) */
+.container {
+    background: #f1f5f9;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+/* ---------------- HEADER ---------------- */
+.header {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    background: linear-gradient(90deg, #e5e7eb, #f8fafc);
+}
+
+.header-left {
+    padding: 26px;
+}
+
+.header-right {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand {
+    font-family: 'Poppins', sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    margin: 8px 0 4px;
+}
+
+.subtitle {
+    font-size: 12px;
+    color: #991b1b;
+    font-weight: 600;
+}
+
+.hero-image {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.hero-image img {
+    max-width: 100%;
+    max-height: 220px;
+    border-radius: 12px;
+}
+
+/* ---------------- MAIN GRID ---------------- */
+.main {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 26px;
+    padding: 26px;
+    background: #ffffff;
+}
+
+/* Section pills */
+.section-label {
+    background: #fee2e2;
+    color: #7f1d1d;
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    margin-bottom: 10px;
+}
+
+/* SPEC TABLE */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+
+.spec-table th,
+.spec-table td {
+    padding: 7px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.spec-table th {
+    color: #6b7280;
+    font-weight: 600;
+    width: 45%;
+}
+
+/* ---------------- CARDS ---------------- */
+.card {
+    background: #f9fafb;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}
+
+.card-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.features {
+    margin: 0;
+    padding: 0;
+}
+
+.features li {
+    list-style: none;
+    margin-bottom: 8px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.features li::before {
+    content: "●";
+    position: absolute;
+    left: 0;
+    color: #991b1b;
+}
+
+/* ---------------- SEO BLOCK ---------------- */
+.seo-block {
+    margin: 26px;
+    padding: 20px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.seo-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.seo-field {
+    margin-bottom: 10px;
+    font-size: 9px;
+}
+
+.seo-field strong {
+    color: #991b1b;
+}
+
+/* ---------------- FOOTER ---------------- */
+.footer {
+    background: #374151;
+    color: #e5e7eb;
+    padding: 16px 26px;
+    font-size: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.footer div:last-child {
+    text-align: right;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- HEADER -->
+<div class="header no-break">
+    <div class="header-left">
+        <div class="brand">{{ data.header_info.brand }}</div>
+        <div class="title">{{ data.header_info.product_name }}</div>
+        <div class="subtitle">{{ data.header_info.model_number }}</div>
+    </div>
+
+    <div class="header-right">
+        {% if image_b64 %}
+        <div class="hero-image">
+            <img src="{{ image_b64 }}">
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+<!-- LEFT COLUMN -->
+<div>
+    <div class="section-label">Product Specifications</div>
+
+    <table class="spec-table">
+        {% for key, value in data.technical_specifications.items() %}
+        <tr>
+            <th>{{ key }}</th>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="section-label" style="margin-top:20px;">Care Instructions</div>
+    {{ data.range_overview }}
+</div>
+
+<!-- RIGHT COLUMN -->
+<div>
+    <div class="card no-break">
+        <div class="card-title">Warranty</div>
+        <strong>Period:</strong> {{ data.warranty_service.period }}<br>
+        <strong>Coverage:</strong> {{ data.warranty_service.coverage }}
+    </div>
+
+    <div class="card no-break">
+        <div class="card-title">Product Features</div>
+        <ul class="features">
+            {% for arg in data.sales_arguments %}
+            <li>{{ arg }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+</div>
+
+<!-- SEO / INTERNAL DATA -->
+<div class="seo-block">
+    <div class="seo-title">Web & SEO Information</div>
+
+    <div class="seo-field">
+        <strong>Meta Title:</strong><br>
+        {{ data.seo_data.meta_title }}
+    </div>
+
+    <div class="seo-field">
+        <strong>Meta Description:</strong><br>
+        {{ data.seo_data.meta_description }}
+    </div>
+
+    <div class="seo-field">
+        <strong>SEO Keywords:</strong><br>
+        {{ product.seo_keywords }}
+        {% if spec_data.long_tail_keywords %}, {{ spec_data.long_tail_keywords }}{% endif %}
+    </div>
+
+    <div class="seo-field">
+        <strong>Refined Description:</strong><br>
+        {{ spec_data.refined_description or data.seo_data.seo_long_description }}
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+    <div><strong>Point of Contact</strong><br>J. Kalachand</div>
+    <div>Generated {{ date_generated }}</div>
+</div>
+
+</div>
+
+</body>
+</html>

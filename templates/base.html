@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}J. Kalachand PIS{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .smooth-scroll-area {
+            scroll-behavior: smooth;
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-[#F8F9FC] flex h-screen overflow-hidden text-slate-600">
+
+    <!-- SIDEBAR: Light Theme -->
+    <aside
+        class="w-72 bg-white text-slate-600 border-r border-gray-100 hidden md:flex flex-col flex-shrink-0 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300">
+        <!-- Logo Area -->
+        <div class="h-20 flex items-center px-8 border-b border-gray-50">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center shadow-lg shadow-red-500/30">
+                    <span class="font-bold text-white text-lg">J</span>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-lg tracking-tight leading-none">PIS Hub</h1>
+                    <p class="text-[10px] text-gray-400 font-bold tracking-wide uppercase mt-0.5">Internal System</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+
+            {% if session.get('role') == 'marketing' %}
+            <p class="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-2">Marketing</p>
+
+            {% set nav_base = "flex items-center px-4 py-2.5 rounded-lg font-medium transition-all duration-200 group
+            relative" %}
+            {% set nav_active = "bg-red-50 text-red-700" %}
+            {% set nav_inactive = "text-slate-500 hover:text-slate-800 hover:bg-gray-50" %}
+
+            <a href="{{ url_for('dashboard_marketing') }}"
+                class="{{ nav_base }} {{ nav_active if request.endpoint == 'dashboard_marketing' else nav_inactive }}">
+                <svg class="w-4 h-4 mr-3 {{ 'text-red-600' if request.endpoint == 'dashboard_marketing' else 'text-gray-400 group-hover:text-slate-600' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span>Overview</span>
+                {% if request.endpoint == 'dashboard_marketing' %}
+                <div class="absolute right-3 w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                {% endif %}
+            </a>
+
+            <a href="{{ url_for('create_pis') }}"
+                class="{{ nav_base }} {{ nav_active if request.endpoint == 'create_pis' else nav_inactive }}">
+                <svg class="w-4 h-4 mr-3 {{ 'text-red-600' if request.endpoint == 'create_pis' else 'text-gray-400 group-hover:text-slate-600' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>New Product</span>
+            </a>
+
+            <a href="{{ url_for('create_bulk') }}"
+                class="{{ nav_base }} {{ nav_active if request.endpoint == 'create_bulk' else nav_inactive }}">
+                <svg class="w-4 h-4 mr-3 {{ 'text-red-600' if request.endpoint == 'create_bulk' else 'text-gray-400 group-hover:text-slate-600' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Bulk Import</span>
+            </a>
+
+            <a href="{{ url_for('history_marketing') }}"
+                class="{{ nav_base }} {{ nav_active if request.endpoint == 'history_marketing' else nav_inactive }}">
+                <svg class="w-4 h-4 mr-3 {{ 'text-red-600' if request.endpoint == 'history_marketing' else 'text-gray-400 group-hover:text-slate-600' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>History Log</span>
+            </a>
+
+            {% elif session.get('role') == 'director' %}
+            <p class="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-2">Director</p>
+
+            {% set nav_base = "flex items-center px-4 py-2.5 rounded-lg font-medium transition-all duration-200 group
+            relative" %}
+            {% set nav_active = "bg-red-50 text-red-700" %}
+            {% set nav_inactive = "text-slate-500 hover:text-slate-800 hover:bg-gray-50" %}
+
+            <a href="{{ url_for('dashboard_director') }}"
+                class="{{ nav_base }} {{ nav_active if request.endpoint == 'dashboard_director' else nav_inactive }}">
+                <svg class="w-4 h-4 mr-3 {{ 'text-red-600' if request.endpoint == 'dashboard_director' else 'text-gray-400 group-hover:text-slate-600' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                <span>Approvals</span>
+            </a>
+
+            <a href="{{ url_for('director_archive') }}"
+                class="{{ nav_base }} {{ nav_active if request.endpoint == 'director_archive' else nav_inactive }}">
+                <svg class="w-4 h-4 mr-3 {{ 'text-red-600' if request.endpoint == 'director_archive' else 'text-gray-400 group-hover:text-slate-600' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                <span>PDF Archive</span>
+            </a>
+
+            {% elif session.get('role') == 'web' %}
+            <p class="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-2">Web Team</p>
+
+            {% set nav_base = "flex items-center px-4 py-2.5 rounded-lg font-medium transition-all duration-200 group
+            relative" %}
+            {% set nav_active = "bg-indigo-50 text-indigo-700" %}
+            {% set nav_inactive = "text-slate-500 hover:text-slate-800 hover:bg-gray-50" %}
+
+            <a href="{{ url_for('dashboard_web') }}"
+                class="{{ nav_base }} {{ nav_active if request.endpoint == 'dashboard_web' else nav_inactive }}">
+                <svg class="w-4 h-4 mr-3 {{ 'text-indigo-600' if request.endpoint == 'dashboard_web' else 'text-gray-400 group-hover:text-slate-600' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+                <span>Tasks Pipeline</span>
+            </a>
+
+            <a href="{{ url_for('web_archive') }}"
+                class="{{ nav_base }} {{ nav_active if request.endpoint == 'web_archive' else nav_inactive }}">
+                <svg class="w-4 h-4 mr-3 {{ 'text-indigo-600' if request.endpoint == 'web_archive' else 'text-gray-400 group-hover:text-slate-600' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                <span>Final Archive</span>
+            </a>
+            {% else %}
+            <a href="{{ url_for('login') }}"
+                class="flex items-center px-4 py-2.5 text-gray-500 hover:text-slate-800 rounded-lg font-medium">
+                <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                <span>Login</span>
+            </a>
+            {% endif %}
+
+        </nav>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-gray-100">
+            <div class="bg-gray-50 rounded-xl p-3 mb-3 flex items-center gap-3 border border-gray-100">
+                <div
+                    class="w-8 h-8 rounded-full bg-white text-red-600 shadow-sm flex items-center justify-center text-xs font-bold border border-gray-100">
+                    {{ session.get('role')[0]|upper if session.get('role') else 'U' }}
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-xs font-bold text-slate-800 truncate">{{ session.get('role', 'User')|capitalize }}
+                    </p>
+                    <p class="text-[10px] text-gray-400 truncate">Online</p>
+                </div>
+            </div>
+            <a href="{{ url_for('login') }}"
+                class="flex items-center justify-center w-full px-4 py-2 text-xs font-bold text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto relative smooth-scroll-area bg-[#F8F9FC]">
+        <!-- Top Bar for Mobile -->
+        <div
+            class="md:hidden h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 sticky top-0 z-50">
+            <div class="font-bold text-lg text-slate-800">J. Kalachand PIS</div>
+            <button class="text-slate-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="p-6 md:p-10 max-w-[1600px] mx-auto min-h-full">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="mb-6 space-y-2 max-w-4xl mx-auto" x-data="{ show: true }" x-show="show"
+                x-init="setTimeout(() => show = false, 5000)">
+                {% for category, message in messages %}
+                <div class="p-3.5 rounded-xl text-sm font-medium flex justify-between items-center shadow-sm border
+                    {% if 'error' in category %} bg-red-50 text-red-700 border-red-100
+                    {% else %} bg-emerald-50 text-emerald-700 border-emerald-100 {% endif %}">
+                    <div class="flex items-center gap-2.5">
+                        {% if 'error' in category %}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {% else %}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {% endif %}
+                        <span>{{ message }}</span>
+                    </div>
+                    <button @click="show = false" class="opacity-60 hover:opacity-100 transition-opacity">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+</body>
+
+</html>
