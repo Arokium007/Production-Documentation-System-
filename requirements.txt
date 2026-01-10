@@ -10,3 +10,5 @@ pymupdf==1.23.8
 onnxruntime==1.16.3
 gunicorn==21.2.0
 Werkzeug==3.0.1
+xhtml2pdf==0.2.13
+reportlab==4.0.7
