@@ -2,186 +2,279 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto pb-32 bg-gray-50 min-h-screen">
-<form id="verifyForm" method="POST">
+    <form id="verifyForm" method="POST">
 
-    {# --- HIDDEN INPUTS FOR FORM SUBMISSION --- #}
-    <input type="hidden" name="director_action" id="director_action_input">
+        {# --- HIDDEN INPUTS FOR FORM SUBMISSION --- #}
+        <input type="hidden" name="director_action" id="director_action_input">
 
-    <!-- ================= HEADER ================= -->
-    <div class="sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 -mx-8 px-8 py-4 mb-10 flex items-center justify-between transition-all">
-        <div>
-            <h2 class="text-2xl font-extrabold text-gray-900">Review PIS Request</h2>
-            <div class="text-sm text-gray-500 flex gap-2">
-                <span>{{ product.model_name }}</span>
-                <span>•</span>
-                <span class="uppercase text-xs font-bold">{{ product.workflow_stage.replace('_', ' ') }}</span>
+        <!-- ================= HEADER ================= -->
+        <div
+            class="sticky top-0 z-40 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 -mx-8 px-8 py-4 mb-10 flex items-center justify-between transition-all">
+            <div>
+                <h2 class="text-2xl font-extrabold text-gray-900">Review PIS Request</h2>
+                <div class="text-sm text-gray-500 flex gap-2">
+                    <span>{{ product.model_name }}</span>
+                    <span>•</span>
+                    <span class="uppercase text-xs font-bold">{{ product.workflow_stage.replace('_', ' ') }}</span>
+                </div>
             </div>
-        </div>
 
-        <div class="flex gap-3">
-             <a href="{{ url_for('dashboard_director') }}" class="px-5 py-2.5 bg-white border border-gray-300 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-colors">
-                Cancel
-            </a>
+            <div class="flex gap-3">
+                <a href="{{ url_for('dashboard_director') }}"
+                    class="px-5 py-2.5 bg-white border border-gray-300 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-colors">
+                    Cancel
+                </a>
 
-            <button type="button" onclick="openReviewModal()"
+                <button type="button" onclick="openReviewModal()"
                     class="px-5 py-2.5 bg-white border border-gray-300 text-red-600 font-bold rounded-2xl hover:bg-red-50 transition-colors flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                Need Review
-            </button>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Need Review
+                </button>
 
-            <button type="button" onclick="openApproveModal()" id="headerApproveBtn"
+                <button type="button" onclick="openApproveModal()" id="headerApproveBtn"
                     class="px-5 py-2.5 bg-black text-white font-bold rounded-2xl hover:bg-gray-800 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-black">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                Approve
-            </button>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Approve
+                </button>
+            </div>
         </div>
-    </div>
 
-    <!-- ================= MAIN GRID ================= -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <!-- ================= MAIN GRID ================= -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-        <!-- ================= LEFT SIDEBAR ================= -->
-        <div class="hidden lg:block lg:col-span-3 sticky top-28 space-y-6">
-            
-            {# Visual Reference Card #}
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-200 p-4">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-xs font-bold text-gray-400 uppercase">Visual Reference</p>
-                </div>
-                <div class="aspect-square bg-gray-50 rounded-2xl flex items-center justify-center overflow-hidden border border-gray-100">
-                    {% if product.image_path %}
-                        <img src="{{ url_for('static', filename=product.image_path) }}" class="w-full h-full object-contain mix-blend-multiply">
-                    {% else %}
+            <!-- ================= LEFT SIDEBAR ================= -->
+            <div class="hidden lg:block lg:col-span-3 sticky top-28 space-y-6">
+
+                {# Visual Reference Card #}
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Visual Reference</p>
+                    </div>
+                    <div
+                        class="aspect-square bg-gray-50 rounded-2xl flex items-center justify-center overflow-hidden border border-gray-100">
+                        {% if product.image_path %}
+                        <img src="{{ url_for('static', filename=product.image_path) }}"
+                            class="w-full h-full object-contain mix-blend-multiply">
+                        {% else %}
                         <span class="text-xs text-gray-400">No image</span>
-                    {% endif %}
-                </div>
-            </div>
-
-            {# PDF Preview Button #}
-            <a href="{{ url_for('download_pis_pdf', product_id=product.id) }}" target="_blank" 
-               class="flex items-center justify-center gap-2 w-full py-3 bg-white border border-gray-300 text-gray-700 font-bold text-sm rounded-2xl hover:bg-gray-50 hover:text-red-600 transition-colors shadow-sm group">
-                <svg class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                Preview PIS PDF
-            </a>
-        </div>
-
-        <!-- ================= RIGHT CONTENT ================= -->
-        <div class="lg:col-span-9 space-y-10">
-
-            {% macro comment_box(section, placeholder) %}
-            <div id="box-{{ section }}" class="hidden bg-red-50 border border-red-200 rounded-2xl p-4 mb-4 animate-fade-in">
-                <label class="text-xs font-bold text-red-600 uppercase mb-1 flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                    Director Instruction ({{ section|replace('_', ' ')|title }})
-                </label>
-                <textarea name="comment_{{ section }}" rows="2" placeholder="{{ placeholder }}" class="w-full p-3 rounded-xl border border-red-100 text-sm bg-white focus:ring-2 focus:ring-red-200 focus:outline-none transition-all"></textarea>
-            </div>
-            {% endmacro %}
-
-            <!-- 1. HEADER INFO -->
-            <div class="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm" data-section="header_info">
-                <h3 class="font-bold text-lg mb-4 text-gray-900">Header Information</h3>
-                {{ comment_box('header_info', 'Fix naming, brand, or formatting') }}
-                
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <span class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Product Name</span>
-                        <span class="font-semibold text-gray-700">{{ data.header_info.product_name }}</span>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <span class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Model Number</span>
-                        <span class="font-mono text-gray-600">{{ data.header_info.model_number }}</span>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <span class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Brand</span>
-                        <span class="text-gray-600">{{ data.header_info.brand }}</span>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <span class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Price Estimate</span>
-                        <span class="text-gray-600">{{ data.header_info.price_estimate }}</span>
+                        {% endif %}
                     </div>
                 </div>
+
+                {# PDF Preview Button #}
+                <a href="{{ url_for('download_pis_pdf', product_id=product.id) }}" target="_blank"
+                    class="flex items-center justify-center gap-2 w-full py-3 bg-white border border-gray-300 text-gray-700 font-bold text-sm rounded-2xl hover:bg-gray-50 hover:text-red-600 transition-colors shadow-sm group">
+                    <svg class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    Preview PIS PDF
+                </a>
             </div>
 
-            <!-- 2. RANGE OVERVIEW -->
-            <div class="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm" data-section="range_overview">
-                <h3 class="font-bold text-lg mb-4 text-gray-900">Range Overview</h3>
-                {{ comment_box('range_overview', 'Clarify or shorten description') }}
-                <div class="bg-gray-50 p-5 rounded-xl text-sm text-gray-700 leading-relaxed border border-gray-100">
-                    {{ data.range_overview }}
+            <!-- ================= RIGHT CONTENT ================= -->
+            <div class="lg:col-span-9 space-y-10">
+
+                {% macro comment_box(section, placeholder) %}
+                <div id="box-{{ section }}"
+                    class="hidden bg-red-50 border border-red-200 rounded-2xl p-4 mb-4 animate-fade-in">
+                    <label class="text-xs font-bold text-red-600 uppercase mb-1 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Director Instruction ({{ section|replace('_', ' ')|title }})
+                    </label>
+                    <textarea name="comment_{{ section }}" rows="2" placeholder="{{ placeholder }}"
+                        class="w-full p-3 rounded-xl border border-red-100 text-sm bg-white focus:ring-2 focus:ring-red-200 focus:outline-none transition-all"></textarea>
                 </div>
-            </div>
+                {% endmacro %}
 
-            <!-- 3. SALES ARGUMENTS -->
-            <div class="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm" data-section="sales_arguments">
-                <h3 class="font-bold text-lg mb-4 text-gray-900">Sales Arguments</h3>
-                {{ comment_box('sales_arguments', 'Add or revise selling points') }}
-                <div class="space-y-3">
-                    {% for arg in data.sales_arguments %}
-                        <div class="bg-gray-50 p-4 rounded-xl text-sm text-gray-700 flex gap-3 border border-gray-100 items-start">
-                            <span class="w-5 h-5 bg-white text-gray-400 rounded-full flex items-center justify-center text-[10px] font-bold border border-gray-200 flex-shrink-0 mt-0.5">{{ loop.index }}</span>
-                            {{ arg }}
+                <!-- 1. HEADER INFO -->
+                <div class="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm" data-section="header_info">
+                    <h3 class="font-bold text-lg mb-4 text-gray-900">Header Information</h3>
+                    {{ comment_box('header_info', 'Fix naming, brand, or formatting') }}
+
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 mb-2">Product Name</label>
+                            <input type="text" name="product_name" value="{{ data.header_info.product_name }}"
+                                class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none">
                         </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- 4. TECH SPECS -->
-            <div class="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm" data-section="technical_specifications">
-                <div class="p-8 pb-4">
-                    <h3 class="font-bold text-lg mb-4 text-gray-900">Technical Specifications</h3>
-                    {{ comment_box('technical_specifications', 'Fix incorrect specifications') }}
-                </div>
-                <table class="w-full text-sm">
-                    <tbody class="divide-y divide-gray-50">
-                    {% for k, v in data.technical_specifications.items() %}
-                    <tr class="group hover:bg-gray-50 transition-colors">
-                        <td class="px-8 py-4 font-bold text-gray-700 w-1/3 bg-gray-50/30">{{ k }}</td>
-                        <td class="px-8 py-4 text-gray-600">{{ v }}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 5. WARRANTY -->
-            <div class="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm" data-section="warranty_service">
-                <h3 class="font-bold text-lg mb-4 text-gray-900">Warranty & Service</h3>
-                {{ comment_box('warranty_service', 'Confirm warranty details') }}
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <span class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Period</span>
-                        <span class="font-medium text-gray-700">{{ data.warranty_service.period }}</span>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <span class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Coverage</span>
-                        <span class="font-medium text-gray-700">{{ data.warranty_service.coverage }}</span>
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 mb-2">Model Number</label>
+                            <input type="text" name="model_number" value="{{ data.header_info.model_number }}"
+                                class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-mono text-gray-600 focus:ring-2 focus:ring-blue-200 focus:outline-none">
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 mb-2">Brand</label>
+                            <input type="text" name="brand" value="{{ data.header_info.brand }}"
+                                class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-blue-200 focus:outline-none">
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 mb-2">Price
+                                Estimate</label>
+                            <input type="text" name="price_estimate" value="{{ data.header_info.price_estimate }}"
+                                class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-blue-200 focus:outline-none">
+                        </div>
                     </div>
                 </div>
-            </div>
 
+                <!-- 2. RANGE OVERVIEW -->
+                <div class="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm" data-section="range_overview">
+                    <h3 class="font-bold text-lg mb-4 text-gray-900">Range Overview</h3>
+                    {{ comment_box('range_overview', 'Clarify or shorten description') }}
+                    <textarea name="range_overview" rows="4"
+                        class="w-full p-5 bg-gray-50 rounded-xl text-sm text-gray-700 leading-relaxed border border-gray-100 focus:ring-2 focus:ring-blue-200 focus:outline-none resize-none">{{ data.range_overview }}</textarea>
+                </div>
+
+                <!-- 3. SALES ARGUMENTS -->
+                <div class="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm" data-section="sales_arguments">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-lg text-gray-900">Sales Arguments</h3>
+                        <button type="button" onclick="addSalesArgument()"
+                            class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Argument
+                        </button>
+                    </div>
+                    {{ comment_box('sales_arguments', 'Add or revise selling points') }}
+                    <div id="salesArgumentsContainer" class="space-y-3">
+                        {% for arg in data.sales_arguments %}
+                        <div
+                            class="sales-arg-item bg-gray-50 p-4 rounded-xl flex gap-3 border border-gray-100 items-start">
+                            <span
+                                class="arg-number w-5 h-5 bg-white text-gray-400 rounded-full flex items-center justify-center text-[10px] font-bold border border-gray-200 flex-shrink-0 mt-2">{{
+                                loop.index }}</span>
+                            <input type="text" name="sales_argument" value="{{ arg }}"
+                                class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none">
+                            <button type="button" onclick="removeSalesArgument(this)"
+                                class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 4. TECH SPECS -->
+                <div class="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm"
+                    data-section="technical_specifications">
+                    <div class="p-8 pb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg text-gray-900">Technical Specifications</h3>
+                            <button type="button" onclick="addTechSpec()"
+                                class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Spec
+                            </button>
+                        </div>
+                        {{ comment_box('technical_specifications', 'Fix incorrect specifications') }}
+                    </div>
+                    <table class="w-full text-sm">
+                        <tbody id="techSpecsContainer" class="divide-y divide-gray-50">
+                            {% for k, v in data.technical_specifications.items() %}
+                            <tr class="tech-spec-row group hover:bg-gray-50 transition-colors">
+                                <td class="px-8 py-4 font-bold text-gray-700 w-1/3 bg-gray-50/30">
+                                    <input type="text" name="tech_spec_key" value="{{ k }}"
+                                        class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none">
+                                </td>
+                                <td class="px-8 py-4">
+                                    <input type="text" name="tech_spec_value" value="{{ v }}"
+                                        class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-blue-200 focus:outline-none">
+                                </td>
+                                <td class="px-4 py-4 w-12">
+                                    <button type="button" onclick="removeTechSpec(this)"
+                                        class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 5. WARRANTY -->
+                <div class="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm" data-section="warranty_service">
+                    <h3 class="font-bold text-lg mb-4 text-gray-900">Warranty & Service</h3>
+                    {{ comment_box('warranty_service', 'Confirm warranty details') }}
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 mb-2">Period</label>
+                            <input type="text" name="warranty_period" value="{{ data.warranty_service.period }}"
+                                class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none">
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <label class="block text-[10px] uppercase font-bold text-gray-400 mb-2">Coverage</label>
+                            <input type="text" name="warranty_coverage" value="{{ data.warranty_service.coverage }}"
+                                class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
-    </div>
-</form>
+    </form>
 </div>
 
 <!-- ================= APPROVE MODAL ================= -->
-<div id="approveModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 backdrop-blur-sm transition-all">
+<div id="approveModal"
+    class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 backdrop-blur-sm transition-all">
     <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl transform scale-100 transition-all">
-        <div class="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-4">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <!-- Initial State -->
+        <div id="approveInitial">
+            <div class="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <h3 class="font-bold text-xl text-gray-900 mb-2">Confirm Approval</h3>
+            <p class="text-sm text-gray-500 mb-2 leading-relaxed">
+                Are you sure you want to approve this PIS?
+            </p>
+            <p class="text-sm text-blue-600 mb-8 leading-relaxed font-medium">
+                ✨ The SpecSheet will be automatically created for the Web Team.
+            </p>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeApproveModal()"
+                    class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="submitApprove()"
+                    class="flex-1 bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg shadow-gray-200">
+                    Yes, Approve
+                </button>
+            </div>
         </div>
-        <h3 class="font-bold text-xl text-gray-900 mb-2">Confirm Approval</h3>
-        <p class="text-sm text-gray-500 mb-8 leading-relaxed">
-            Are you sure you want to approve this PIS? This will finalize the content for the PDF generation.
-        </p>
-        <div class="flex gap-3">
-            <button type="button" onclick="closeApproveModal()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
-                Cancel
-            </button>
-            <button type="button" onclick="submitApprove()" class="flex-1 bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg shadow-gray-200">
-                Yes, Approve
-            </button>
+
+        <!-- Loading State -->
+        <div id="approveLoading" class="hidden text-center">
+            <div class="w-16 h-16 mx-auto mb-4 relative">
+                <div class="absolute inset-0 border-4 border-green-200 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-green-600 rounded-full border-t-transparent animate-spin">
+                </div>
+            </div>
+            <h3 class="font-bold text-xl text-gray-900 mb-2">Approving PIS...</h3>
+            <p class="text-sm text-gray-500">Please wait while we initialize the data.</p>
         </div>
     </div>
 </div>
@@ -192,11 +285,19 @@
 
         <div class="flex items-center justify-between mb-6">
             <h3 class="font-bold text-xl text-gray-900">Request Changes</h3>
-            <button onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            <button onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-600"><svg class="w-6 h-6"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg></button>
         </div>
 
-        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800 mb-6 flex items-start gap-3">
-            <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div
+            class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800 mb-6 flex items-start gap-3">
+            <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             <p>This will return the PIS to the Marketing Team with your instructions below.</p>
         </div>
 
@@ -204,137 +305,246 @@
             Summary of Feedback
         </h4>
 
-        <div id="reviewSummary" class="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm max-h-48 overflow-y-auto mb-6 space-y-3">
+        <div id="reviewSummary"
+            class="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm max-h-48 overflow-y-auto mb-6 space-y-3">
             <p class="text-gray-400 italic text-xs text-center py-2">No specific section comments added yet.</p>
         </div>
 
         <label class="block text-xs font-bold text-gray-700 uppercase mb-2">General Comments (Optional)</label>
-        <textarea name="director_general_comments" rows="3" class="w-full p-4 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all" placeholder="Any overall feedback..."></textarea>
+        <textarea name="director_general_comments" rows="3"
+            class="w-full p-4 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+            placeholder="Any overall feedback..."></textarea>
 
         <div class="flex gap-3 mt-8">
-            <button type="button" onclick="closeReviewModal()" class="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors">
+            <button type="button" onclick="closeReviewModal()"
+                class="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors">
                 Keep Reviewing
             </button>
-            <button type="button" onclick="submitReview()" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-100">
+            <button type="button" onclick="submitReview()"
+                class="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-100">
                 Send Request
             </button>
         </div>
     </div>
 </div>
 
+<!-- ================= LOADING MODAL ================= -->
+<div id="loadingModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] backdrop-blur-sm">
+    <div class="bg-white rounded-3xl w-full max-w-md p-10 shadow-2xl text-center">
+        <!-- Loading Spinner -->
+        <div class="mb-6 flex justify-center">
+            <div class="relative w-16 h-16">
+                <div class="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-red-500 rounded-full border-t-transparent animate-spin">
+                </div>
+            </div>
+        </div>
+        <h3 class="font-bold text-xl text-gray-900 mb-2">Processing Request...</h3>
+        <p class="text-sm text-gray-500">Generating AI revisions and sending to Marketing Team</p>
+        <div class="mt-6 flex justify-center gap-1">
+            <div class="w-2 h-2 bg-red-500 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+            <div class="w-2 h-2 bg-red-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-2 h-2 bg-red-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+        </div>
+    </div>
+</div>
+
 <style>
-    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 
 <!-- ================= JS ================= -->
 <script>
-/* ---------- AUTO OPEN COMMENTS ON SCROLL ---------- */
-const autoOpened = new Set();
-const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        const section = entry.target.dataset.section;
-        if (autoOpened.has(section)) return;
-        const box = document.getElementById('box-' + section);
-        if (box) {
-            box.classList.remove('hidden');
-            autoOpened.add(section);
-        }
-    });
-}, { threshold: 0.35 });
+    /* ---------- AUTO OPEN COMMENTS ON SCROLL ---------- */
+    const autoOpened = new Set();
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const section = entry.target.dataset.section;
+            if (autoOpened.has(section)) return;
+            const box = document.getElementById('box-' + section);
+            if (box) {
+                box.classList.remove('hidden');
+                autoOpened.add(section);
+            }
+        });
+    }, { threshold: 0.35 });
 
-document.querySelectorAll('[data-section]').forEach(el => observer.observe(el));
+    document.querySelectorAll('[data-section]').forEach(el => observer.observe(el));
 
-/* ---------- MODALS ---------- */
-function openApproveModal() {
-    document.getElementById('approveModal').classList.remove('hidden');
-    document.getElementById('approveModal').classList.add('flex');
-}
-function closeApproveModal() {
-    document.getElementById('approveModal').classList.add('hidden');
-}
-function openReviewModal() {
-    buildReviewSummary();
-    document.getElementById('reviewModal').classList.remove('hidden');
-    document.getElementById('reviewModal').classList.add('flex');
-}
-function closeReviewModal() {
-    document.getElementById('reviewModal').classList.add('hidden');
-}
-
-/* ---------- SUBMISSION ---------- */
-function submitApprove() {
-    document.getElementById('director_action_input').value = 'approve';
-    document.getElementById('verifyForm').submit();
-}
-
-function submitReview() {
-    document.getElementById('director_action_input').value = 'review';
-    document.getElementById('verifyForm').submit();
-}
-
-/* ---------- REVIEW SUMMARY BUILDER & BUTTON STATE ---------- */
-const SECTION_LABELS = {
-    header_info: "Header Information",
-    range_overview: "Range Overview",
-    sales_arguments: "Sales Arguments",
-    technical_specifications: "Technical Specifications",
-    warranty_service: "Warranty & Service"
-};
-
-const approveBtn = document.getElementById('headerApproveBtn');
-const commentTextareas = document.querySelectorAll('textarea[name^="comment_"]');
-
-function checkCommentStatus() {
-    let hasText = false;
-    commentTextareas.forEach(el => {
-        if (el.value.trim().length > 0) hasText = true;
-    });
-
-    if (hasText) {
-        approveBtn.disabled = true;
-        approveBtn.title = "Cannot approve while comments exist. Request changes instead.";
-    } else {
-        approveBtn.disabled = false;
-        approveBtn.title = "";
+    /* ---------- MODALS ---------- */
+    function openApproveModal() {
+        document.getElementById('approveModal').classList.remove('hidden');
+        document.getElementById('approveModal').classList.add('flex');
     }
-}
+    function closeApproveModal() {
+        document.getElementById('approveModal').classList.add('hidden');
+    }
+    function openReviewModal() {
+        buildReviewSummary();
+        document.getElementById('reviewModal').classList.remove('hidden');
+        document.getElementById('reviewModal').classList.add('flex');
+    }
+    function closeReviewModal() {
+        document.getElementById('reviewModal').classList.add('hidden');
+    }
 
-function buildReviewSummary() {
-    const container = document.getElementById('reviewSummary');
-    container.innerHTML = "";
-    let hasContent = false;
+    /* ---------- SUBMISSION ---------- */
+    function submitApprove() {
+        // Hide initial content, show loading
+        document.getElementById('approveInitial').classList.add('hidden');
+        document.getElementById('approveLoading').classList.remove('hidden');
 
-    Object.keys(SECTION_LABELS).forEach(sec => {
-        const t = document.querySelector(`textarea[name="comment_${sec}"]`);
-        if (t && t.value.trim()) {
-            hasContent = true;
-            container.innerHTML += `
+        // Set action and submit form
+        document.getElementById('director_action_input').value = 'approve';
+
+        // Small delay to show loading animation
+        setTimeout(() => {
+            document.getElementById('verifyForm').submit();
+        }, 500);
+    }
+
+    function submitReview() {
+        // Close review modal
+        closeReviewModal();
+
+        // Show loading modal
+        document.getElementById('loadingModal').classList.remove('hidden');
+        document.getElementById('loadingModal').classList.add('flex');
+
+        // Set action and submit
+        document.getElementById('director_action_input').value = 'review';
+        document.getElementById('verifyForm').submit();
+    }
+
+    /* ---------- REVIEW SUMMARY BUILDER & BUTTON STATE ---------- */
+    const SECTION_LABELS = {
+        header_info: "Header Information",
+        range_overview: "Range Overview",
+        sales_arguments: "Sales Arguments",
+        technical_specifications: "Technical Specifications",
+        warranty_service: "Warranty & Service"
+    };
+
+    const approveBtn = document.getElementById('headerApproveBtn');
+    const commentTextareas = document.querySelectorAll('textarea[name^="comment_"]');
+
+    function checkCommentStatus() {
+        let hasText = false;
+        commentTextareas.forEach(el => {
+            if (el.value.trim().length > 0) hasText = true;
+        });
+
+        if (hasText) {
+            approveBtn.disabled = true;
+            approveBtn.title = "Cannot approve while comments exist. Request changes instead.";
+        } else {
+            approveBtn.disabled = false;
+            approveBtn.title = "";
+        }
+    }
+
+    function buildReviewSummary() {
+        const container = document.getElementById('reviewSummary');
+        container.innerHTML = "";
+        let hasContent = false;
+
+        Object.keys(SECTION_LABELS).forEach(sec => {
+            const t = document.querySelector(`textarea[name="comment_${sec}"]`);
+            if (t && t.value.trim()) {
+                hasContent = true;
+                container.innerHTML += `
                 <div class="bg-white border border-red-100 rounded-xl p-3 shadow-sm border-l-4 border-l-red-400">
                     <p class="font-bold text-xs text-gray-500 uppercase mb-1">${SECTION_LABELS[sec]}</p>
-                    <p class="text-sm text-gray-800">${t.value.substring(0,120)}${t.value.length > 120 ? '…' : ''}</p>
+                    <p class="text-sm text-gray-800">${t.value.substring(0, 120)}${t.value.length > 120 ? '…' : ''}</p>
                 </div>
             `;
-        }
-    });
+            }
+        });
 
-    if (!hasContent) {
-        container.innerHTML = '<p class="text-gray-400 italic text-xs text-center py-2">No specific section comments added yet.</p>';
+        if (!hasContent) {
+            container.innerHTML = '<p class="text-gray-400 italic text-xs text-center py-2">No specific section comments added yet.</p>';
+        }
     }
-}
 
-// Unified Event Listener for all comment boxes
-commentTextareas.forEach(el => {
-    el.addEventListener('input', () => {
-        // Update Modal Summary if visible
-        if (!document.getElementById('reviewModal').classList.contains('hidden')) {
-            buildReviewSummary();
-        }
-        // Check text presence to toggle Approve button
-        checkCommentStatus();
+    // Unified Event Listener for all comment boxes
+    commentTextareas.forEach(el => {
+        el.addEventListener('input', () => {
+            // Update Modal Summary if visible
+            if (!document.getElementById('reviewModal').classList.contains('hidden')) {
+                buildReviewSummary();
+            }
+            // Check text presence to toggle Approve button
+            checkCommentStatus();
+        });
     });
-});
+
+    /* ---------- SALES ARGUMENTS ADD/REMOVE ---------- */
+    function addSalesArgument() {
+        const container = document.getElementById('salesArgumentsContainer');
+        const newItem = document.createElement('div');
+        newItem.className = 'sales-arg-item bg-gray-50 p-4 rounded-xl flex gap-3 border border-gray-100 items-start';
+        newItem.innerHTML = `
+            <span class="arg-number w-5 h-5 bg-white text-gray-400 rounded-full flex items-center justify-center text-[10px] font-bold border border-gray-200 flex-shrink-0 mt-2"></span>
+            <input type="text" name="sales_argument" value="" class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none" placeholder="Enter sales argument...">
+            <button type="button" onclick="removeSalesArgument(this)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        `;
+        container.appendChild(newItem);
+        updateArgNumbers();
+    }
+
+    function removeSalesArgument(button) {
+        button.closest('.sales-arg-item').remove();
+        updateArgNumbers();
+    }
+
+    function updateArgNumbers() {
+        const items = document.querySelectorAll('.sales-arg-item');
+        items.forEach((item, index) => {
+            item.querySelector('.arg-number').textContent = index + 1;
+        });
+    }
+
+    /* ---------- TECH SPECS ADD/REMOVE ---------- */
+    function addTechSpec() {
+        const container = document.getElementById('techSpecsContainer');
+        const newRow = document.createElement('tr');
+        newRow.className = 'tech-spec-row group hover:bg-gray-50 transition-colors';
+        newRow.innerHTML = `
+            <td class="px-8 py-4 font-bold text-gray-700 w-1/3 bg-gray-50/30">
+                <input type="text" name="tech_spec_key" value="" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none" placeholder="Specification name...">
+            </td>
+            <td class="px-8 py-4">
+                <input type="text" name="tech_spec_value" value="" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:ring-2 focus:ring-blue-200 focus:outline-none" placeholder="Value...">
+            </td>
+            <td class="px-4 py-4 w-12">
+                <button type="button" onclick="removeTechSpec(this)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </td>
+        `;
+        container.appendChild(newRow);
+    }
+
+    function removeTechSpec(button) {
+        button.closest('.tech-spec-row').remove();
+    }
 </script>
 
 {% endblock %}

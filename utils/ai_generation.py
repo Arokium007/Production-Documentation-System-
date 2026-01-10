@@ -7,6 +7,7 @@ import json
 import time
 import re
 import google.generativeai as genai
+from .category_classifier import classify_product_category
 
 
 def generate_pis_data(file_path, model_name, url_data):
@@ -120,12 +121,38 @@ def generate_comprehensive_spec_data(pis_data):
             print("⚠️ AI returned empty/invalid key_features, falling back to PIS sales_arguments")
             spec_data["key_features"] = sales_arguments
         
+        # ADD CATEGORY CLASSIFICATION
+        print("\n" + "="*80)
+        print("🔄 Starting Category Classification Process...")
+        print("="*80)
+        
+        try:
+            categories = classify_product_category(pis_data)
+            spec_data["categories"] = categories
+            print(f"✅ Categories successfully added to spec_data: {categories}")
+        except Exception as e:
+            print(f"❌ ERROR in category classification: {e}")
+            import traceback
+            traceback.print_exc()
+            # Add fallback categories even on error
+            spec_data["categories"] = {
+                "category_1": "Home & Garden",
+                "category_2": "Home Deco",
+                "category_3": "Lighting"
+            }
+            print(f"⚠️ Using fallback categories")
+        
+        print("="*80 + "\n")
+        
         return spec_data
         
     except Exception as e:
         print(f"Spec Generation Error: {e}")
+        import traceback
+        traceback.print_exc()
+        
         # HARD GUARANTEE: Always return valid structure with PIS data
-        return {
+        fallback_data = {
             "customer_friendly_description": pis_data.get('seo_data', {}).get('seo_long_description', ''),
             "key_features": sales_arguments,  # Direct 1-to-1 fallback
             "seo": {
@@ -134,6 +161,24 @@ def generate_comprehensive_spec_data(pis_data):
                 "keywords": pis_data.get('seo_data', {}).get('generated_keywords', '')
             }
         }
+        
+        # Try to add categories even in fallback
+        print("\n🏷️ Attempting category classification in fallback mode...")
+        try:
+            categories = classify_product_category(pis_data)
+            fallback_data["categories"] = categories
+            print(f"✅ Categories added successfully in fallback: {categories}")
+        except Exception as cat_error:
+            print(f"❌ Category classification failed in fallback: {cat_error}")
+            # Ultimate fallback categories
+            fallback_data["categories"] = {
+                "category_1": "Home & Garden",
+                "category_2": "Home Deco",
+                "category_3": "Lighting"
+            }
+            print(f"⚠️ Using ultimate fallback categories")
+        
+        return fallback_data
 
 
 def generate_bulk_pis_data(file_path, url_data):

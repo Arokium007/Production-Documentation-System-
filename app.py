@@ -81,6 +81,11 @@ def set_role(role):
     elif role == 'web': return redirect(url_for('dashboard_web'))
     return redirect(url_for('login'))
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 # --- DASHBOARDS ---
 
 @app.route('/dashboard/marketing')
@@ -525,6 +530,10 @@ def review_pis_marketing(product_id):
         
         product.pis_data = updated_data
         
+        # CRITICAL: Flag the JSON field as modified so SQLAlchemy saves it
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(product, 'pis_data')
+        
         if request.form.get('action') == 'submit_director':
             product.workflow_stage = 'pending_director_pis'
             log_event(product.id, 'Marketing Team', 'Submitted to Director', 'PIS draft submitted for review.', 'waiting')
@@ -544,6 +553,45 @@ def review_director_pis(product_id):
     product = Product.query.get_or_404(product_id)
     if request.method == 'POST':
         action = request.form.get('director_action')
+        
+        # --- NEW: Handle director field edits before approval/review ---
+        updated_data = product.pis_data or {}
+        
+        # Update Header Info if edited
+        if request.form.get('product_name'):
+            if 'header_info' not in updated_data: updated_data['header_info'] = {}
+            updated_data['header_info']['product_name'] = request.form.get('product_name')
+            updated_data['header_info']['model_number'] = request.form.get('model_number')
+            updated_data['header_info']['brand'] = request.form.get('brand')
+            updated_data['header_info']['price_estimate'] = request.form.get('price_estimate')
+        
+        # Update Range Overview if edited
+        if request.form.get('range_overview'):
+            updated_data['range_overview'] = request.form.get('range_overview')
+        
+        # Update Sales Arguments if edited
+        sales_args = request.form.getlist('sales_argument')
+        if sales_args and any(arg.strip() for arg in sales_args):
+            updated_data['sales_arguments'] = [arg.strip() for arg in sales_args if arg.strip()]
+        
+        # Update Technical Specifications if edited
+        tech_spec_keys = request.form.getlist('tech_spec_key')
+        tech_spec_values = request.form.getlist('tech_spec_value')
+        if tech_spec_keys and tech_spec_values:
+            updated_data['technical_specifications'] = dict(zip(tech_spec_keys, tech_spec_values))
+        
+        # Update Warranty if edited
+        if request.form.get('warranty_period'):
+            if 'warranty_service' not in updated_data: updated_data['warranty_service'] = {}
+            updated_data['warranty_service']['period'] = request.form.get('warranty_period')
+            updated_data['warranty_service']['coverage'] = request.form.get('warranty_coverage')
+        
+        # Save updated data
+        product.pis_data = updated_data
+        
+        # CRITICAL: Flag the JSON field as modified so SQLAlchemy saves it
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(product, 'pis_data')
         
         if action == 'review':
             # Updated Map with ALL sections
@@ -581,10 +629,54 @@ def review_director_pis(product_id):
             log_event(product.id, 'Director', 'Changes Requested', log_desc, 'action')
 
         elif action == 'approve':
-            # --- CRITICAL FIX: Explicitly set stage to 'ready_for_web' ---
+            print("\n" + "="*80)
+            print("📋 DIRECTOR APPROVED PIS - GENERATING SPECSHEET")
+            print("="*80)
+            
+            # --- Generate comprehensive specsheet data with AI (includes categories) ---
+            try:
+                print("🤖 Calling generate_comprehensive_spec_data()...")
+                spec_data_generated = generate_comprehensive_spec_data(product.pis_data)
+                
+                # Add technical specifications from PIS
+                spec_data_generated['technical_specifications'] = product.pis_data.get('technical_specifications', {})
+                
+                product.spec_data = spec_data_generated
+                print(f"✅ SpecSheet data generated successfully")
+                print(f"   - Has categories: {'categories' in spec_data_generated}")
+                if 'categories' in spec_data_generated:
+                    print(f"   - Categories: {spec_data_generated['categories']}")
+                
+            except Exception as e:
+                print(f"❌ ERROR generating specsheet data: {e}")
+                import traceback
+                traceback.print_exc()
+                
+                # Fallback to basic spec_data
+                print("⚠️ Using fallback spec_data creation...")
+                initial_spec_data = {
+                    'customer_friendly_description': product.pis_data.get('seo_data', {}).get('seo_long_description', ''),
+                    'refined_description': product.pis_data.get('seo_data', {}).get('seo_long_description', ''),
+                    'key_features': product.pis_data.get('sales_arguments', []),
+                    'long_tail_keywords': '',
+                    'seo': {
+                        'meta_title': product.pis_data.get('seo_data', {}).get('meta_title', ''),
+                        'meta_description': product.pis_data.get('seo_data', {}).get('meta_description', ''),
+                        'keywords': product.pis_data.get('seo_data', {}).get('generated_keywords', '')
+                    },
+                    'categories': {
+                        'category_1': 'Home & Garden',
+                        'category_2': 'Home Deco',
+                        'category_3': 'Lighting'
+                    }
+                }
+                product.spec_data = initial_spec_data
+            
+            print("="*80 + "\n")
+            
             product.workflow_stage = 'ready_for_web'
             product.revision_data = None
-            log_event(product.id, 'Director', 'PIS Approved', 'Director approved the PIS content.', 'success')
+            log_event(product.id, 'Director', 'PIS Approved', 'Director approved the PIS content and initialized Specsheet.', 'success')
             
         db.session.commit()
         return redirect(url_for('dashboard_director'))
@@ -641,6 +733,14 @@ def create_specsheet(product_id):
         spec_data['seo']['meta_description'] = request.form.get('seo_meta_description')
         spec_data['seo']['keywords'] = request.form.get('seo_keywords')
         
+        # Save Categories
+        if request.form.get('category_1'):
+            if 'categories' not in spec_data:
+                spec_data['categories'] = {}
+            spec_data['categories']['category_1'] = request.form.get('category_1')
+            spec_data['categories']['category_2'] = request.form.get('category_2')
+            spec_data['categories']['category_3'] = request.form.get('category_3')
+        
         # Save Technical Specifications (from JSON)
         tech_specs_json = request.form.get('technical_specifications')
         if tech_specs_json:
@@ -651,6 +751,11 @@ def create_specsheet(product_id):
                 spec_data['technical_specifications'] = product.pis_data.get('technical_specifications', {})
 
         product.spec_data = spec_data
+        
+        # CRITICAL: Flag the JSON field as modified so SQLAlchemy saves it
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(product, 'spec_data')
+        
         db.session.commit()
         return redirect(url_for('dashboard_web'))
         
@@ -664,6 +769,65 @@ def review_director_spec(product_id):
     
     if request.method == 'POST':
         action = request.form.get('director_action')
+        
+        # --- NEW: Handle director field edits before approval/review ---
+        updated_pis_data = product.pis_data or {}
+        updated_spec_data = product.spec_data or {}
+        
+        # Update Header Info if edited (from PIS data)
+        if request.form.get('product_name'):
+            if 'header_info' not in updated_pis_data: updated_pis_data['header_info'] = {}
+            updated_pis_data['header_info']['product_name'] = request.form.get('product_name')
+            updated_pis_data['header_info']['model_number'] = request.form.get('model_number')
+            updated_pis_data['header_info']['brand'] = request.form.get('brand')
+            updated_pis_data['header_info']['price_estimate'] = request.form.get('price_estimate')
+        
+        # Update Range Overview if edited
+        if request.form.get('range_overview'):
+            updated_pis_data['range_overview'] = request.form.get('range_overview')
+        
+        # Update Sales Arguments if edited
+        sales_args = request.form.getlist('sales_argument')
+        if sales_args and any(arg.strip() for arg in sales_args):
+            updated_pis_data['sales_arguments'] = [arg.strip() for arg in sales_args if arg.strip()]
+        
+        # Update Technical Specifications if edited
+        tech_spec_keys = request.form.getlist('tech_spec_key')
+        tech_spec_values = request.form.getlist('tech_spec_value')
+        if tech_spec_keys and tech_spec_values:
+            updated_pis_data['technical_specifications'] = dict(zip(tech_spec_keys, tech_spec_values))
+        
+        # Update Warranty if edited
+        if request.form.get('warranty_period'):
+            if 'warranty_service' not in updated_pis_data: updated_pis_data['warranty_service'] = {}
+            updated_pis_data['warranty_service']['period'] = request.form.get('warranty_period')
+            updated_pis_data['warranty_service']['coverage'] = request.form.get('warranty_coverage')
+        
+        # Update SpecSheet-specific fields
+        if request.form.get('refined_description'):
+            updated_spec_data['refined_description'] = request.form.get('refined_description')
+            updated_spec_data['customer_friendly_description'] = request.form.get('refined_description')
+        
+        # Update SEO Keywords if edited
+        if request.form.get('seo_keywords'):
+            product.seo_keywords = request.form.get('seo_keywords')
+        
+        # Update Categories if edited
+        if request.form.get('category_1'):
+            if 'categories' not in updated_spec_data:
+                updated_spec_data['categories'] = {}
+            updated_spec_data['categories']['category_1'] = request.form.get('category_1')
+            updated_spec_data['categories']['category_2'] = request.form.get('category_2')
+            updated_spec_data['categories']['category_3'] = request.form.get('category_3')
+        
+        # Save updated data
+        product.pis_data = updated_pis_data
+        product.spec_data = updated_spec_data
+        
+        # CRITICAL: Flag the JSON fields as modified so SQLAlchemy saves them
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(product, 'pis_data')
+        flag_modified(product, 'spec_data')
         
         if action == 'review':
             # Section-specific comments map

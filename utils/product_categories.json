@@ -1,0 +1,597 @@
+[
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Ceilings & Floorings",
+    "cat_C": "Tiles"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Ceilings & Floorings",
+    "cat_C": "Laminate Flooring"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Ceilings & Floorings",
+    "cat_C": "Luxury Vinyl Flooring (LVT)"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Ceilings & Floorings",
+    "cat_C": "Stone Plastic Composite (SPC)"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Ceilings & Floorings",
+    "cat_C": "Carpet Tiles"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Wash Basin"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Bathroom Accessories"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Automatic Dispensers & Hand Dryers"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Toilets & Bidets"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Shower Enclosures & Bathtubs"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Shower Columns & Heads"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Gas Water Heaters"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Electric Water Heaters"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Washbasin Cabinets"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Solar Water Heaters"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Bathroom",
+    "cat_C": "Taps & Mixers"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Kitchen",
+    "cat_C": "Taps"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Kitchen",
+    "cat_C": "Quartz & Granite"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Kitchen",
+    "cat_C": "Stainless Steel Sinks"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Kitchen",
+    "cat_C": "Buffet & Display"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Home Deco",
+    "cat_C": "Artificial Plants & Pots"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Home Deco",
+    "cat_C": "Buddha Statues"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Home Deco",
+    "cat_C": "Wall Clocks"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Home Deco",
+    "cat_C": "Table Clocks"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Home Deco",
+    "cat_C": "Mirrors"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Home Deco",
+    "cat_C": "Lighting"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Home Deco",
+    "cat_C": "Rugs"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Home Deco",
+    "cat_C": "Door Mats"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Home Deco",
+    "cat_C": "Christmas Tree"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Cleaning & Bins",
+    "cat_C": "Mops"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Cleaning & Bins",
+    "cat_C": "Cleaning Accessories"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Cleaning & Bins",
+    "cat_C": "Brooms & Sweepers"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Cleaning & Bins",
+    "cat_C": "Bins"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Cleaning & Bins",
+    "cat_C": "Steam Mops"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "DIY & Garden",
+    "cat_C": "Artificial Grass"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "DIY & Garden",
+    "cat_C": "Hand Tools"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "DIY & Garden",
+    "cat_C": "Ladders & Trolleys"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "DIY & Garden",
+    "cat_C": "Pressure Cleaners"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "DIY & Garden",
+    "cat_C": "Lighting"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "DIY & Garden",
+    "cat_C": "BBQ Grills"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "DIY & Garden",
+    "cat_C": "Garden Tools"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Laundry & Storage",
+    "cat_C": "Wicker Baskets"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Laundry & Storage",
+    "cat_C": "Ironing & Accessories"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Laundry & Storage",
+    "cat_C": "Multi-Purpose Storage"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Laundry & Storage",
+    "cat_C": "Plastic Baskets"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Security",
+    "cat_C": "Safes"
+  },
+  {
+    "cat_A": "Home & Garden",
+    "cat_B": "Security",
+    "cat_C": "CCTV Cameras"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Living Room",
+    "cat_C": "Sofas & Couches"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Living Room",
+    "cat_C": "TV Units"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Living Room",
+    "cat_C": "Coffee Tables"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Bedroom",
+    "cat_C": "Beds & Mattresses"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Bedroom",
+    "cat_C": "Wardrobes"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Bedroom",
+    "cat_C": "Dressing Tables"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Dining Room",
+    "cat_C": "Dining Tables"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Dining Room",
+    "cat_C": "Dining Chairs"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Dining Room",
+    "cat_C": "Sideboards"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Office Furniture",
+    "cat_C": "Office Desks"
+  },
+  {
+    "cat_A": "Furniture",
+    "cat_B": "Office Furniture",
+    "cat_C": "Office Chairs"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Large Appliances",
+    "cat_C": "Refrigerators"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Large Appliances",
+    "cat_C": "Washing Machines"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Large Appliances",
+    "cat_C": "Ovens & Cookers"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Large Appliances",
+    "cat_C": "Dishwashers"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Small Appliances",
+    "cat_C": "Microwaves"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Small Appliances",
+    "cat_C": "Kettles & Toasters"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Small Appliances",
+    "cat_C": "Blenders & Mixers"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Small Appliances",
+    "cat_C": "Coffee Machines"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Cooling & Air Care",
+    "cat_C": "Air Conditioners"
+  },
+  {
+    "cat_A": "Appliances",
+    "cat_B": "Cooling & Air Care",
+    "cat_C": "Fans"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "TV & Video",
+    "cat_C": "LED TVs"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "TV & Video",
+    "cat_C": "Smart TVs"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "TV & Video",
+    "cat_C": "Projectors"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "Audio",
+    "cat_C": "Soundbars"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "Audio",
+    "cat_C": "Bluetooth Speakers"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "Audio",
+    "cat_C": "Headphones"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "Computers",
+    "cat_C": "Laptops"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "Computers",
+    "cat_C": "Tablets"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "Computers",
+    "cat_C": "Printers"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "Mobile Phones",
+    "cat_C": "Smartphones"
+  },
+  {
+    "cat_A": "Electronics",
+    "cat_B": "Mobile Phones",
+    "cat_C": "Accessories"
+  },
+  {
+    "cat_A": "Houseware",
+    "cat_B": "Cooking",
+    "cat_C": "Pots & Pans"
+  },
+  {
+    "cat_A": "Houseware",
+    "cat_B": "Cooking",
+    "cat_C": "Knives & Utensils"
+  },
+  {
+    "cat_A": "Houseware",
+    "cat_B": "Dining",
+    "cat_C": "Dinner Sets"
+  },
+  {
+    "cat_A": "Houseware",
+    "cat_B": "Dining",
+    "cat_C": "Glassware"
+  },
+  {
+    "cat_A": "Houseware",
+    "cat_B": "Dining",
+    "cat_C": "Cutlery"
+  },
+  {
+    "cat_A": "Houseware",
+    "cat_B": "Storage",
+    "cat_C": "Food Containers"
+  },
+  {
+    "cat_A": "Houseware",
+    "cat_B": "Storage",
+    "cat_C": "Flasks & Bottles"
+  },
+  {
+    "cat_A": "Mechanical",
+    "cat_B": "Power Tools",
+    "cat_C": "Drills & Drivers"
+  },
+  {
+    "cat_A": "Mechanical",
+    "cat_B": "Power Tools",
+    "cat_C": "Saws"
+  },
+  {
+    "cat_A": "Mechanical",
+    "cat_B": "Power Tools",
+    "cat_C": "Sanders"
+  },
+  {
+    "cat_A": "Mechanical",
+    "cat_B": "Automotive",
+    "cat_C": "Car Care"
+  },
+  {
+    "cat_A": "Mechanical",
+    "cat_B": "Automotive",
+    "cat_C": "Tyres"
+  },
+  {
+    "cat_A": "Mechanical",
+    "cat_B": "Generators",
+    "cat_C": "Portable Generators"
+  },
+  {
+    "cat_A": "Leisure",
+    "cat_B": "Outdoor",
+    "cat_C": "Camping Gear"
+  },
+  {
+    "cat_A": "Leisure",
+    "cat_B": "Outdoor",
+    "cat_C": "Tents"
+  },
+  {
+    "cat_A": "Leisure",
+    "cat_B": "Travel",
+    "cat_C": "Luggage & Suitcases"
+  },
+  {
+    "cat_A": "Leisure",
+    "cat_B": "Travel",
+    "cat_C": "Travel Accessories"
+  },
+  {
+    "cat_A": "Leisure",
+    "cat_B": "Sports",
+    "cat_C": "Bicycles"
+  },
+  {
+    "cat_A": "Leisure",
+    "cat_B": "Sports",
+    "cat_C": "Water Sports"
+  },
+  {
+    "cat_A": "Health & Styling",
+    "cat_B": "Hair Care",
+    "cat_C": "Hair Dryers"
+  },
+  {
+    "cat_A": "Health & Styling",
+    "cat_B": "Hair Care",
+    "cat_C": "Straighteners & Curlers"
+  },
+  {
+    "cat_A": "Health & Styling",
+    "cat_B": "Grooming",
+    "cat_C": "Shavers & Trimmers"
+  },
+  {
+    "cat_A": "Health & Styling",
+    "cat_B": "Grooming",
+    "cat_C": "Epilators"
+  },
+  {
+    "cat_A": "Health & Styling",
+    "cat_B": "Wellness",
+    "cat_C": "Massagers"
+  },
+  {
+    "cat_A": "Health & Styling",
+    "cat_B": "Wellness",
+    "cat_C": "Health Monitors"
+  },
+  {
+    "cat_A": "Fitness",
+    "cat_B": "Cardio",
+    "cat_C": "Treadmills"
+  },
+  {
+    "cat_A": "Fitness",
+    "cat_B": "Cardio",
+    "cat_C": "Exercise Bikes"
+  },
+  {
+    "cat_A": "Fitness",
+    "cat_B": "Cardio",
+    "cat_C": "Ellipticals"
+  },
+  {
+    "cat_A": "Fitness",
+    "cat_B": "Strength",
+    "cat_C": "Dumbbells & Weights"
+  },
+  {
+    "cat_A": "Fitness",
+    "cat_B": "Strength",
+    "cat_C": "Benches & Racks"
+  },
+  {
+    "cat_A": "Fitness",
+    "cat_B": "Accessories",
+    "cat_C": "Yoga Mats"
+  },
+  {
+    "cat_A": "Music & AV",
+    "cat_B": "Instruments",
+    "cat_C": "Guitars"
+  },
+  {
+    "cat_A": "Music & AV",
+    "cat_B": "Instruments",
+    "cat_C": "Keyboards & Pianos"
+  },
+  {
+    "cat_A": "Music & AV",
+    "cat_B": "Professional Audio",
+    "cat_C": "Mixers & PA Systems"
+  },
+  {
+    "cat_A": "Music & AV",
+    "cat_B": "Professional Audio",
+    "cat_C": "Microphones"
+  },
+  {
+    "cat_A": "Commercial",
+    "cat_B": "Office Equipment",
+    "cat_C": "Photocopiers"
+  },
+  {
+    "cat_A": "Commercial",
+    "cat_B": "Office Equipment",
+    "cat_C": "Paper Shredders"
+  },
+  {
+    "cat_A": "Commercial",
+    "cat_B": "Industrial",
+    "cat_C": "Industrial Fans"
+  },
+  {
+    "cat_A": "Commercial",
+    "cat_B": "Refrigeration",
+    "cat_C": "Chest Freezers"
+  },
+  {
+    "cat_A": "Commercial",
+    "cat_B": "Refrigeration",
+    "cat_C": "Beverage Coolers"
+  }
+]

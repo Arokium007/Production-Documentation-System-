@@ -53,6 +53,7 @@
                 <nav class="flex gap-1 bg-gray-50/50 p-1 rounded-xl">
                     <a href="#content" class="nav-link">Web Content</a>
                     <a href="#seo" class="nav-link">SEO</a>
+                    <a href="#categories" class="nav-link">Categories</a>
                     <a href="#features" class="nav-link">Key Features</a>
                     <a href="#tech_specs" class="nav-link">Tech Specs</a>
                 </nav>
@@ -273,6 +274,73 @@
                             <textarea name="seo_keywords" rows="3" class="textarea"
                                 placeholder="product mauritius, brand mauritius, buy mauritius, port louis, delivery mauritius, mauritius price">{{ spec_data.seo.keywords }}</textarea>
                         </div>
+                    </div>
+                </section>
+
+                {# NEW: PRODUCT CLASSIFICATION SECTION #}
+                <section id="categories" class="section-card scroll-mt-40 border-l-4 border-l-purple-500">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-lg">Product Classification</h3>
+                                <p class="text-xs text-gray-500">For website navigation and SEO</p>
+                            </div>
+                        </div>
+                        {% if spec_data.get('categories') %}
+                        <div
+                            class="flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg">
+                            <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13 7H7v6h6V7z" />
+                                <path fill-rule="evenodd"
+                                    d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            <span class="text-xs font-bold text-purple-600">AI Classified</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5 block">
+                                Category A
+                            </label>
+                            <input type="text" name="category_1"
+                                value="{{ spec_data.get('categories', {}).get('category_1', '') }}"
+                                class="input bg-purple-50/30 border-purple-100 focus:border-purple-300"
+                                placeholder="e.g., Home & Garden">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5 block">
+                                Category B
+                            </label>
+                            <input type="text" name="category_2"
+                                value="{{ spec_data.get('categories', {}).get('category_2', '') }}"
+                                class="input bg-purple-50/30 border-purple-100 focus:border-purple-300"
+                                placeholder="e.g., Bathroom">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5 block">
+                                Category C
+                            </label>
+                            <input type="text" name="category_3"
+                                value="{{ spec_data.get('categories', {}).get('category_3', '') }}"
+                                class="input bg-purple-50/30 border-purple-100 focus:border-purple-300"
+                                placeholder="e.g., Wash Basin">
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                        <p class="text-xs text-blue-800">
+                            <strong>💡 Tip:</strong> These categories are used for website navigation and SEO.
+                            If the AI classification doesn't match the product, you can edit the values above.
+                        </p>
                     </div>
                 </section>
 
