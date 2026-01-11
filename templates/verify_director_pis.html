@@ -155,10 +155,10 @@
                     </div>
                 </div>
 
-                <!-- 2. RANGE OVERVIEW -->
+                <!-- 2. SHORT DESCRIPTION -->
                 <div class="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm scroll-mt-48" id="overview"
                     data-section="range_overview">
-                    <h3 class="font-bold text-lg mb-4 text-gray-900">Range Overview</h3>
+                    <h3 class="font-bold text-lg mb-4 text-gray-900">SHORT DESCRIPTION</h3>
                     {{ comment_box('range_overview', 'Clarify or shorten description') }}
                     <textarea name="range_overview" rows="4"
                         class="w-full p-5 bg-gray-50 rounded-xl text-sm text-gray-700 leading-relaxed border border-gray-100 focus:ring-2 focus:ring-blue-200 focus:outline-none resize-none">{{ data.range_overview }}</textarea>
@@ -491,7 +491,7 @@
     /* ---------- REVIEW SUMMARY BUILDER & BUTTON STATE ---------- */
     const SECTION_LABELS = {
         header_info: "Header Information",
-        range_overview: "Range Overview",
+        range_overview: "SHORT DESCRIPTION",
         sales_arguments: "Sales Arguments",
         technical_specifications: "Technical Specifications",
         warranty_service: "Warranty & Service"

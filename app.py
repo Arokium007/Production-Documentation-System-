@@ -572,7 +572,7 @@ def review_director_pis(product_id):
     if request.method == 'POST':
         action = request.form.get('director_action')
         
-        # --- NEW: Handle director field edits before approval/review ---
+        # --- NEW: Handle director field edits before approval/review --- 
         updated_data = product.pis_data or {}
         
         # Update Header Info if edited
@@ -583,7 +583,7 @@ def review_director_pis(product_id):
             updated_data['header_info']['brand'] = request.form.get('brand')
             updated_data['header_info']['price_estimate'] = request.form.get('price_estimate')
         
-        # Update Range Overview if edited
+        # Update SHORT DESCRIPTION if edited
         if request.form.get('range_overview'):
             updated_data['range_overview'] = request.form.get('range_overview')
         
@@ -798,7 +798,7 @@ def review_director_spec(product_id):
             updated_pis_data['header_info']['brand'] = request.form.get('brand')
             updated_pis_data['header_info']['price_estimate'] = request.form.get('price_estimate')
         
-        # Update Range Overview if edited
+        # Update SHORT DESCRIPTION if edited
         if request.form.get('range_overview'):
             updated_pis_data['range_overview'] = request.form.get('range_overview')
         
@@ -1138,7 +1138,7 @@ def api_save_draft(product_id):
         updated_pis_data['header_info']['brand'] = data.get('brand')
         updated_pis_data['header_info']['price_estimate'] = data.get('price_estimate')
 
-    # 2. Update Range Overview / Description (Cross-Sync)
+    # 2. Update SHORT DESCRIPTION / Description (Cross-Sync)
     if 'range_overview' in data:
         desc = data.get('range_overview')
         updated_pis_data['range_overview'] = desc
