@@ -133,7 +133,7 @@
             <div>
                 <p
                     class="text-xs font-bold text-gray-400 uppercase tracking-wide group-hover:text-red-500 transition-colors">
-                    Pending Action</p>
+                    Need Review</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.pending_reviews }}</p>
             </div>
         </div>
@@ -207,7 +207,7 @@
                         class="px-4 py-1.5 rounded-md text-xs transition-all">All Files</button>
                     <button @click="filter = 'action'"
                         :class="filter === 'action' ? 'bg-white text-red-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Pending Action</button>
+                        class="px-4 py-1.5 rounded-md text-xs transition-all">Need Review</button>
                     <button @click="filter = 'marketing'"
                         :class="filter === 'marketing' ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
                         class="px-4 py-1.5 rounded-md text-xs transition-all">Drafts</button>

@@ -97,9 +97,10 @@ def dashboard_marketing():
     # 3. Calculate Real-Time Metrics
     metrics = {
         'total_active': len(active_pipeline),
-        'drafts': sum(1 for p in all_products if 'draft' in p.workflow_stage or 'changes_requested' in p.workflow_stage),
-        'pending_review': sum(1 for p in all_products if 'pending' in p.workflow_stage),
-        'completed': sum(1 for p in all_products if p.workflow_stage == 'finalized')
+        'drafts': sum(1 for p in all_products if p.workflow_stage == 'marketing_draft'),
+        'changes': sum(1 for p in all_products if p.workflow_stage == 'marketing_changes_requested'),
+        'need_review': sum(1 for p in all_products if p.workflow_stage == 'pending_director_pis'),
+        'approved': sum(1 for p in all_products if p.workflow_stage in ['finalized', 'ready_for_web'])
     }
     
     return render_template('dashboard_marketing.html', 
@@ -205,6 +206,17 @@ def history_marketing():
     return render_template('history_marketing.html', products_json=products_json)
 
 
+@app.route('/dashboard/marketing/archive')
+def marketing_archive():
+    if session.get('role') != 'marketing': return redirect(url_for('login'))
+    
+    # Marketing archive should show all approved/finalized products
+    approved_stages = ['finalized', 'ready_for_web', 'specsheet_draft', 'pending_director_spec', 'web_changes_requested']
+    archived_products = Product.query.filter(Product.workflow_stage.in_(approved_stages)).order_by(Product.created_at.desc()).all()
+    
+    return render_template('archive_marketing.html', products=archived_products)
+
+
 @app.route('/dashboard/director')
 def dashboard_director():
     if session.get('role') != 'director': return redirect(url_for('login'))
@@ -249,18 +261,26 @@ def dashboard_web():
         return redirect(url_for('login'))
 
     # ---- FETCH TASKS FOR WEB TEAM ----
+    # We fetch everything related to the web pipeline:
+    # 1. New from PIS (ready_for_web)
+    # 2. Sent back by Director (web_changes_requested)
+    # 3. Drafts saved by web team (specsheet_draft)
+    # 4. Sent for approval (pending_director_spec)
+    # 5. Approved/Finalized (finalized)
     tasks = (
         Product.query
         .filter(Product.workflow_stage.in_([
             'ready_for_web',
             'web_changes_requested',
-            'specsheet_draft'
+            'specsheet_draft',
+            'pending_director_spec',
+            'finalized'
         ]))
         .order_by(Product.created_at.desc())
         .all()
     )
 
-    # ---- BUILD JSON-SAFE PRODUCT PAYLOAD (CRITICAL FIX) ----
+    # ---- BUILD JSON-SAFE PRODUCT PAYLOAD ----
     products_json = []
     for p in tasks:
         products_json.append({
@@ -282,8 +302,10 @@ def dashboard_web():
     # ---- METRICS (SERVER-SIDE, TRUSTED) ----
     metrics = {
         "total_tasks": len(tasks),
-        "new_pis": sum(1 for p in tasks if p.workflow_stage == "ready_for_web"),
+        "new_specsheets": sum(1 for p in tasks if p.workflow_stage == "ready_for_web"),
         "changes_requested": sum(1 for p in tasks if p.workflow_stage == "web_changes_requested"),
+        "need_review": sum(1 for p in tasks if p.workflow_stage == "pending_director_spec"),
+        "approved": sum(1 for p in tasks if p.workflow_stage == "finalized"),
         "drafts": sum(1 for p in tasks if p.workflow_stage == "specsheet_draft"),
     }
 

@@ -25,6 +25,15 @@
                     Cancel
                 </a>
 
+                <a href="{{ url_for('download_pis_pdf', product_id=product.id) }}" target="_blank"
+                    class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-2xl hover:bg-gray-50 transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    Preview PDF
+                </a>
+
                 <button type="button" onclick="openReviewModal()"
                     class="px-5 py-2.5 bg-white border border-gray-300 text-red-600 font-bold rounded-2xl hover:bg-red-50 transition-colors flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,16 +75,6 @@
                     </div>
                 </div>
 
-                {# PDF Preview Button #}
-                <a href="{{ url_for('download_pis_pdf', product_id=product.id) }}" target="_blank"
-                    class="flex items-center justify-center gap-2 w-full py-3 bg-white border border-gray-300 text-gray-700 font-bold text-sm rounded-2xl hover:bg-gray-50 hover:text-red-600 transition-colors shadow-sm group">
-                    <svg class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                    Preview PIS PDF
-                </a>
             </div>
 
             <!-- ================= RIGHT CONTENT ================= -->

@@ -116,6 +116,16 @@
                 <span>History Log</span>
             </a>
 
+            <a href="{{ url_for('marketing_archive') }}"
+                class="{{ nav_base }} {{ nav_active if request.endpoint == 'marketing_archive' else nav_inactive }}">
+                <svg class="w-4 h-4 mr-3 {{ 'text-red-600' if request.endpoint == 'marketing_archive' else 'text-gray-400 group-hover:text-slate-600' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                <span>PDF Archive</span>
+            </a>
+
             {% elif session.get('role') == 'director' %}
             <p class="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-2">Director</p>
 

@@ -45,9 +45,10 @@
             if (!matchesSearch) return false;
             
             if (this.filter === 'all') return true;
-            if (this.filter === 'draft' && (p.stage.includes('draft') || p.stage.includes('changes_requested'))) return true;
-            if (this.filter === 'pending' && p.stage.includes('pending')) return true;
-            if (this.filter === 'final' && (p.stage === 'finalized' || p.stage === 'ready_for_web')) return true;
+            if (this.filter === 'draft') return p.stage === 'marketing_draft';
+            if (this.filter === 'changes') return p.stage === 'marketing_changes_requested';
+            if (this.filter === 'review') return p.stage === 'pending_director_pis';
+            if (this.filter === 'approved') return p.stage === 'finalized' || p.stage === 'ready_for_web';
             return false;
         });
     }
@@ -113,8 +114,8 @@
             </div>
         </div>
 
-        <div
-            class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-yellow-200 transition-colors group">
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-yellow-200 transition-colors group cursor-pointer"
+            @click="filter = 'draft'">
             <div
                 class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center text-yellow-600 flex-shrink-0 group-hover:bg-yellow-100 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,23 +129,38 @@
             </div>
         </div>
 
-        <div
-            class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-blue-200 transition-colors group">
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-red-200 transition-colors group cursor-pointer"
+            @click="filter = 'changes'">
             <div
-                class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600 flex-shrink-0 group-hover:bg-red-100 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Review</p>
-                <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.pending_review }}</p>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Changes</p>
+                <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.changes }}</p>
             </div>
         </div>
 
-        <div
-            class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-green-200 transition-colors group">
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-blue-200 transition-colors group cursor-pointer"
+            @click="filter = 'review'">
+            <div
+                class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Review</p>
+                <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.need_review }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-green-200 transition-colors group cursor-pointer"
+            @click="filter = 'approved'">
             <div
                 class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600 flex-shrink-0 group-hover:bg-green-100 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,8 +169,8 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Done</p>
-                <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.completed }}</p>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Approved</p>
+                <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.approved }}</p>
             </div>
         </div>
     </div>
@@ -186,20 +202,24 @@
                     </button>
                 </div>
 
-                <!-- Minimal Filters -->
                 <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
                     <button @click="filter = 'all'"
-                        :class="filter === 'all' ? 'bg-white text-slate-800 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">All</button>
+                        :class="filter === 'all' ? 'bg-white text-slate-800 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase tracking-wider">All</button>
                     <button @click="filter = 'draft'"
-                        :class="filter === 'draft' ? 'bg-white text-yellow-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Drafts</button>
-                    <button @click="filter = 'pending'"
-                        :class="filter === 'pending' ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Review</button>
-                    <button @click="filter = 'final'"
-                        :class="filter === 'final' ? 'bg-white text-green-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Approved</button>
+                        :class="filter === 'draft' ? 'bg-white text-yellow-600 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase tracking-wider">Drafts</button>
+                    <button @click="filter = 'changes'"
+                        :class="filter === 'changes' ? 'bg-white text-red-600 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase tracking-wider">Change
+                        Requested</button>
+                    <button @click="filter = 'review'"
+                        :class="filter === 'review' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase tracking-wider">Need
+                        Review</button>
+                    <button @click="filter = 'approved'"
+                        :class="filter === 'approved' ? 'bg-white text-green-600 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase tracking-wider">Approved</button>
                 </div>
             </div>
 
