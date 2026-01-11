@@ -55,20 +55,26 @@
                 </div>
             </div>
 
-            <div class="px-8 pb-3 flex justify-between items-end">
-                <nav class="flex gap-1 bg-gray-50/50 p-1 rounded-xl">
-                    <a href="#content" class="nav-link">Web Content</a>
-                    <a href="#features" class="nav-link">Key Features</a>
-                    <a href="#seo" class="nav-link">SEO</a>
-                    <a href="#categories" class="nav-link">Product Classification</a>
-                    <a href="#tech_specs" class="nav-link">Technical Specifications</a>
+            <div class="px-8 pb-3 flex justify-between items-center gap-8">
+                <nav class="flex gap-1 bg-gray-100/50 p-1 rounded-xl">
+                    <a href="#content"
+                        class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Web
+                        Content</a>
+                    <a href="#features"
+                        class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Key
+                        Features</a>
+                    <a href="#seo"
+                        class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">SEO</a>
+                    <a href="#categories"
+                        class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Classification</a>
+                    <a href="#tech_specs"
+                        class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Technical
+                        Specs</a>
                 </nav>
 
-                <div class="w-1/3 pb-2 hidden md:block">
-                    <div class="h-1 bg-gray-100 rounded-full overflow-hidden">
-                        <div id="scrollProgress"
-                            class="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 w-0 transition-all duration-150 ease-out shadow-[0_0_8px_rgba(99,102,241,0.4)]">
-                        </div>
+                <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden shadow-inner relative">
+                    <div id="scrollProgress"
+                        class="h-full bg-gradient-to-r from-red-500 via-red-600 to-red-700 w-0 transition-all duration-150 ease-out shadow-[0_0_10px_rgba(220,38,38,0.5)]">
                     </div>
                 </div>
             </div>
@@ -515,7 +521,8 @@
 
     .nav-link.active {
         background: #fff;
-        color: #4f46e5;
+        color: #dc2626;
+        /* Brand Red */
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
@@ -858,32 +865,54 @@
         }
     });
 
-    // --- Scroll Spy Logic ---
-    const sections = document.querySelectorAll("section[id]");
-    const navLinks = document.querySelectorAll(".nav-link");
-    const progressBar = document.getElementById("scrollProgress");
+    /* ---------- SCROLL PROGRESSION & SPY ---------- */
+    function updateScrollProgress() {
+        const progressBar = document.getElementById("scrollProgress");
+        const navLinks = document.querySelectorAll(".nav-link");
+        const sections = ["content", "features", "seo", "categories", "tech_specs"];
+        const mainContainer = document.querySelector('main');
 
-    window.addEventListener("scroll", () => {
-        // Progress Bar
-        const h = document.documentElement.scrollHeight - window.innerHeight;
-        const percentage = h > 0 ? Math.min((window.scrollY / h) * 100, 100) : 0;
-        if (progressBar) progressBar.style.width = percentage + "%";
+        if (!progressBar || !mainContainer) return;
 
-        // Active Link
+        const winScroll = mainContainer.scrollTop;
+        const totalHeight = mainContainer.scrollHeight - mainContainer.clientHeight;
+
+        if (totalHeight > 0) {
+            const scrolled = (winScroll / totalHeight) * 100;
+            progressBar.style.width = scrolled + "%";
+        }
+
+        // Scroll Spy
         let current = "";
-        sections.forEach(s => {
-            if (window.scrollY >= s.offsetTop - 250) {
-                current = s.id;
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                if (rect.top <= 250) {
+                    current = id;
+                }
             }
         });
 
-        navLinks.forEach(l => {
-            l.classList.remove("active");
-            if (l.getAttribute("href") === "#" + current) {
-                l.classList.add("active");
+        navLinks.forEach(link => {
+            link.classList.remove("active", "bg-white", "text-red-600", "shadow-sm");
+            if (link.getAttribute("href") === "#" + current) {
+                link.classList.add("active", "bg-white", "text-red-600", "shadow-sm");
             }
         });
-    });
+    }
+
+    const container = document.querySelector('main');
+    if (container) {
+        container.addEventListener("scroll", () => {
+            window.requestAnimationFrame(updateScrollProgress);
+        }, { passive: true });
+    }
+
+    // Initial checks
+    document.addEventListener("DOMContentLoaded", updateScrollProgress);
+    window.addEventListener("load", updateScrollProgress);
+    window.addEventListener("resize", updateScrollProgress);
 </script>
 
 <!-- SUBMIT CONFIRMATION MODAL -->
