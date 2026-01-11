@@ -29,9 +29,14 @@ else:
 # Database Config
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'instance', 'pis_system.db')
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
+
+# Ensure database and uploads directory exist (Runs even under Gunicorn)
+with app.app_context():
+    if not os.path.exists('instance'): os.makedirs('instance')
+    db.create_all()
+    if not os.path.exists(app.config['UPLOAD_FOLDER']): os.makedirs(app.config['UPLOAD_FOLDER'])
 
 
 # Import utility functions from utils package
@@ -1108,11 +1113,6 @@ def api_generate_specsheet(product_id):
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        if not os.path.exists('instance'): os.makedirs('instance')
-        db.create_all()
-        if not os.path.exists(app.config['UPLOAD_FOLDER']): os.makedirs(app.config['UPLOAD_FOLDER'])
-    
     # Use PORT from environment (default to 5000)
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
