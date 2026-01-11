@@ -690,6 +690,7 @@ def create_specsheet(product_id):
         initial_spec_data = {
             'customer_friendly_description': product.pis_data.get('seo_data', {}).get('seo_long_description', ''),
             'key_features': product.pis_data.get('sales_arguments', []),
+            'internal_web_keywords': product.pis_data.get('seo_data', {}).get('generated_keywords', ''),
             'seo': {
                 'meta_title': product.pis_data.get('seo_data', {}).get('meta_title', ''),
                 'meta_description': product.pis_data.get('seo_data', {}).get('meta_description', ''),
@@ -728,6 +729,7 @@ def create_specsheet(product_id):
         spec_data['seo']['meta_title'] = request.form.get('seo_meta_title')
         spec_data['seo']['meta_description'] = request.form.get('seo_meta_description')
         spec_data['seo']['keywords'] = request.form.get('seo_keywords')
+        spec_data['internal_web_keywords'] = request.form.get('internal_web_keywords')
         
         # Save Categories
         if request.form.get('category_1'):
@@ -808,6 +810,9 @@ def review_director_spec(product_id):
         if request.form.get('seo_keywords'):
             product.seo_keywords = request.form.get('seo_keywords')
         
+        if request.form.get('internal_web_keywords'):
+            updated_spec_data['internal_web_keywords'] = request.form.get('internal_web_keywords')
+        
         # Update Categories if edited
         if request.form.get('category_1'):
             if 'categories' not in updated_spec_data:
@@ -829,6 +834,7 @@ def review_director_spec(product_id):
             # Section-specific comments map
             comments_map = {
                 'seo_optimization': request.form.get('comment_seo_optimization'),
+                'internal_web_keywords': request.form.get('comment_internal_web_keywords'),
                 'header_info': request.form.get('comment_header_info'),
                 'range_overview': request.form.get('comment_range_overview'),
                 'sales_arguments': request.form.get('comment_sales_arguments'),
@@ -841,9 +847,12 @@ def review_director_spec(product_id):
             for section, comment in comments_map.items():
                 if comment and comment.strip():
                     # Get original content based on section
-                    if section == 'seo_optimization':
-                        # For SEO, we use spec_data content
-                        original = product.spec_data.get('customer_friendly_description') if product.spec_data else ''
+                    if section in ['seo_optimization', 'internal_web_keywords']:
+                        # For SpecSheet specific fields
+                        if section == 'seo_optimization':
+                            original = product.spec_data.get('customer_friendly_description') if product.spec_data else ''
+                        else:
+                            original = product.spec_data.get('internal_web_keywords') if product.spec_data else ''
                     else:
                         # For other sections, use PIS data
                         original = product.pis_data.get(section)

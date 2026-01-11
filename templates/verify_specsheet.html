@@ -113,6 +113,7 @@
                     </div>
 
                     {{ comment_box('seo_optimization', 'Feedback on PDF description or keywords...') }}
+                    {{ comment_box('internal_web_keywords', 'Feedback on site search keywords...') }}
 
                     <div class="space-y-6">
                         <div>
@@ -131,12 +132,18 @@
                                     class="w-full p-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Web
-                                    Team Added</label>
-                                <div
-                                    class="p-4 bg-green-50 rounded-xl text-sm text-green-800 border border-green-100 font-medium">
-                                    {{ spec_data.long_tail_keywords or 'No additional keywords added.' }}
-                                </div>
+                                <label
+                                    class="block text-xs font-bold text-gray-900 uppercase tracking-wide mb-2 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                    Web Keywords (Internal Search)
+                                </label>
+                                <textarea name="internal_web_keywords" rows="2"
+                                    class="w-full p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl text-sm font-semibold text-indigo-900 focus:ring-2 focus:ring-indigo-200 focus:outline-none resize-none"
+                                    placeholder="Keywords for site search...">{{ spec_data.get('internal_web_keywords', '') }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -157,16 +164,6 @@
                                 <h3 class="font-bold text-lg text-gray-900">Product Classification</h3>
                                 <p class="text-xs text-gray-500">AI-Suggested Categories</p>
                             </div>
-                        </div>
-                        <div
-                            class="flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-lg">
-                            <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M13 7H7v6h6V7z" />
-                                <path fill-rule="evenodd"
-                                    d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <span class="text-xs font-bold text-purple-600">AI Classified</span>
                         </div>
                     </div>
 
@@ -200,13 +197,6 @@
                                 class="w-full p-4 bg-purple-50/30 border border-purple-100 rounded-xl text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-purple-200 focus:outline-none"
                                 placeholder="e.g., Wash Basin">
                         </div>
-                    </div>
-
-                    <div class="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                        <p class="text-xs text-blue-800">
-                            <strong>💡 Tip:</strong> These categories are used for website navigation and SEO.
-                            If the AI classification doesn't match, you can edit the values above.
-                        </p>
                     </div>
                 </div>
 
@@ -358,24 +348,38 @@
 <div id="approveModal"
     class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 backdrop-blur-sm transition-all">
     <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl transform scale-100 transition-all">
-        <div class="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-4">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
+        <!-- Initial State -->
+        <div id="approveInitial">
+            <div class="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <h3 class="font-bold text-xl text-gray-900 mb-2">Confirm Approval</h3>
+            <p class="text-sm text-gray-500 mb-8 leading-relaxed">
+                Are you sure you want to approve this SpecSheet? This will finalize the content for the PDF generation.
+            </p>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeApproveModal()"
+                    class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="submitApprove()"
+                    class="flex-1 bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg shadow-gray-200">
+                    Yes, Approve
+                </button>
+            </div>
         </div>
-        <h3 class="font-bold text-xl text-gray-900 mb-2">Confirm Approval</h3>
-        <p class="text-sm text-gray-500 mb-8 leading-relaxed">
-            Are you sure you want to approve this SpecSheet? This will finalize the content for the PDF generation.
-        </p>
-        <div class="flex gap-3">
-            <button type="button" onclick="closeApproveModal()"
-                class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
-                Cancel
-            </button>
-            <button type="button" onclick="submitApprove()"
-                class="flex-1 bg-black text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg shadow-gray-200">
-                Yes, Approve
-            </button>
+
+        <!-- Loading State -->
+        <div id="approveLoading" class="hidden text-center">
+            <div class="w-16 h-16 mx-auto mb-4 relative">
+                <div class="absolute inset-0 border-4 border-green-200 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-green-600 rounded-full border-t-transparent animate-spin">
+                </div>
+            </div>
+            <h3 class="font-bold text-xl text-gray-900 mb-2">Finalizing...</h3>
+            <p class="text-sm text-gray-500">Please wait while we save the final specsheet.</p>
         </div>
     </div>
 </div>
@@ -425,6 +429,27 @@
                 class="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-100">
                 Send Request
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= LOADING MODAL ================= -->
+<div id="loadingModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] backdrop-blur-sm">
+    <div class="bg-white rounded-3xl w-full max-w-md p-10 shadow-2xl text-center">
+        <!-- Loading Spinner -->
+        <div class="mb-6 flex justify-center">
+            <div class="relative w-16 h-16">
+                <div class="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-red-500 rounded-full border-t-transparent animate-spin">
+                </div>
+            </div>
+        </div>
+        <h3 class="font-bold text-xl text-gray-900 mb-2">Processing Request...</h3>
+        <p class="text-sm text-gray-500">Sending back to Web Team</p>
+        <div class="mt-6 flex justify-center gap-1">
+            <div class="w-2 h-2 bg-red-500 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+            <div class="w-2 h-2 bg-red-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-2 h-2 bg-red-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
         </div>
     </div>
 </div>
@@ -485,11 +510,28 @@
 
     /* ---------- SUBMISSION ---------- */
     function submitApprove() {
+        // Hide initial content, show loading
+        document.getElementById('approveInitial').classList.add('hidden');
+        document.getElementById('approveLoading').classList.remove('hidden');
+
+        // Set action and submit form
         document.getElementById('director_action_input').value = 'approve';
-        document.getElementById('verifyForm').submit();
+
+        // Small delay to show loading animation
+        setTimeout(() => {
+            document.getElementById('verifyForm').submit();
+        }, 500);
     }
 
     function submitReview() {
+        // Close review modal
+        closeReviewModal();
+
+        // Show loading modal
+        document.getElementById('loadingModal').classList.remove('hidden');
+        document.getElementById('loadingModal').classList.add('flex');
+
+        // Set action and submit
         document.getElementById('director_action_input').value = 'review';
         document.getElementById('verifyForm').submit();
     }
@@ -497,6 +539,7 @@
     /* ---------- REVIEW SUMMARY BUILDER & BUTTON STATE ---------- */
     const SECTION_LABELS = {
         seo_optimization: "SpecSheet Optimization",
+        internal_web_keywords: "Web Keywords",
         product_classification: "Product Classification",
         header_info: "Header Information",
         range_overview: "Range Overview",

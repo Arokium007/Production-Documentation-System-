@@ -101,6 +101,7 @@ def generate_comprehensive_spec_data(pis_data):
     {{
         "customer_friendly_description": "Compelling 1-2 paragraph description...",
         "key_features": ["Customer-friendly rewrite of argument 1", "Customer-friendly rewrite of argument 2", ...],
+        "internal_web_keywords": "comma-separated list of short keywords for internal website search (e.g., 'fridge, samsung, refrigerator, silver')",
         "seo": {{
             "meta_title": "Product Name | Mauritius (60 chars max)",
             "meta_description": "Compelling description with Mauritius location (160 chars max)",
@@ -155,6 +156,7 @@ def generate_comprehensive_spec_data(pis_data):
         fallback_data = {
             "customer_friendly_description": pis_data.get('seo_data', {}).get('seo_long_description', ''),
             "key_features": sales_arguments,  # Direct 1-to-1 fallback
+            "internal_web_keywords": pis_data.get('seo_data', {}).get('generated_keywords', ''),
             "seo": {
                 "meta_title": pis_data.get('seo_data', {}).get('meta_title', ''),
                 "meta_description": pis_data.get('seo_data', {}).get('meta_description', ''),
