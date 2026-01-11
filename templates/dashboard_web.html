@@ -86,14 +86,14 @@
             {% if p.workflow_stage == 'ready_for_web' %}
                 status_bg: 'bg-green-100',
                 status_text: 'text-green-700',
-                stage_display: 'New PIS',
+                stage_display: 'New SpecSheet',
                 action_label: 'Edit SpecSheet',
                 is_urgent: false,
                 is_modal_trigger: false,
             {% elif p.workflow_stage == 'web_changes_requested' %}
                 status_bg: 'bg-red-100',
                 status_text: 'text-red-700',
-                stage_display: 'Corrections',
+                stage_display: 'Change Requested',
                 action_label: 'Fix SpecSheet',
                 is_urgent: true,
                 is_modal_trigger: false,
