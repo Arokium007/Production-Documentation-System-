@@ -25,6 +25,12 @@
                     Cancel
                 </a>
 
+                <div id="saveStatus"
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-300 opacity-0 bg-gray-50 text-gray-400">
+                    <div class="status-dot w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+                    <span class="status-text">Saved </span>
+                </div>
+
                 <a href="{{ url_for('download_pis_pdf', product_id=product.id) }}" target="_blank"
                     class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-2xl hover:bg-gray-50 transition-colors flex items-center gap-2">
                     <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -544,6 +550,99 @@
     function removeTechSpec(button) {
         button.closest('.tech-spec-row').remove();
     }
+
+    // --- Auto-Save Logic ---
+    const saveStatus = document.getElementById('saveStatus');
+    const statusText = saveStatus.querySelector('.status-text');
+    const statusDot = saveStatus.querySelector('.status-dot');
+
+    function updateSaveStatus(state) {
+        saveStatus.style.opacity = '1';
+        if (state === 'saving') {
+            statusText.textContent = 'Saving...';
+            statusDot.className = 'status-dot w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse';
+            saveStatus.className = 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-300 bg-amber-50 text-amber-600';
+        } else if (state === 'saved') {
+            statusText.textContent = 'Saved ';
+            statusDot.className = 'status-dot w-1.5 h-1.5 rounded-full bg-green-500';
+            saveStatus.className = 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-300 bg-green-50 text-green-600';
+            setTimeout(() => { saveStatus.style.opacity = '0.6'; }, 2000);
+        } else if (state === 'error') {
+            statusText.textContent = 'Save Failed';
+            statusDot.className = 'status-dot w-1.5 h-1.5 rounded-full bg-red-500';
+            saveStatus.className = 'flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-300 bg-red-50 text-red-600';
+        }
+    }
+
+    function debounce(func, delay) {
+        let timeout;
+        return function (...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    async function performAutoSave() {
+        updateSaveStatus('saving');
+
+        const form = document.getElementById('verifyForm');
+        const formData = new FormData(form);
+        const data = {};
+
+        // 1. Collect standard fields (including Director comments)
+        formData.forEach((value, key) => {
+            if (['sales_argument', 'tech_spec_key', 'tech_spec_value', 'director_action'].includes(key)) return;
+            data[key] = value;
+        });
+
+        // 2. Collect Sales Arguments
+        const salesArgs = [];
+        document.querySelectorAll('input[name="sales_argument"]').forEach(input => {
+            if (input.value.trim()) salesArgs.push(input.value.trim());
+        });
+        data['sales_argument'] = salesArgs;
+
+        // 3. Collect Technical Specifications
+        const techSpecs = {};
+        const keys = document.querySelectorAll('input[name="tech_spec_key"]');
+        const values = document.querySelectorAll('input[name="tech_spec_value"]');
+        keys.forEach((keyInput, i) => {
+            const k = keyInput.value.trim();
+            const v = values[i].value.trim();
+            if (k) techSpecs[k] = v;
+        });
+        data['technical_specifications'] = techSpecs;
+
+        try {
+            const response = await fetch(`/api/product/{{ product.id }}/save_draft`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                updateSaveStatus('saved');
+            } else {
+                updateSaveStatus('error');
+            }
+        } catch (error) {
+            console.error('Auto-save error:', error);
+            updateSaveStatus('error');
+        }
+    }
+
+    const debouncedSave = debounce(performAutoSave, 1500);
+
+    // Listen for all input changes in the form
+    document.getElementById('verifyForm').addEventListener('input', () => debouncedSave());
+
+    // Listen for add/remove buttons or other clicks that affect data
+    document.getElementById('verifyForm').addEventListener('click', (e) => {
+        if (e.target.closest('button') && !e.target.closest('button[type="submit"]')) {
+            setTimeout(debouncedSave, 100);
+        }
+    });
+
 </script>
 
 {% endblock %}

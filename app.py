@@ -558,7 +558,7 @@ def review_pis_marketing(product_id):
             flash("Submitted to Director")
         else:
             log_event(product.id, 'Marketing Team', 'Draft Updated', 'Marketing team saved changes.', 'neutral')
-            flash("Draft Saved")
+            flash("Saved ")
             
         db.session.commit()
         return redirect(url_for('dashboard_marketing'))
@@ -707,7 +707,7 @@ def create_specsheet(product_id):
     product = Product.query.get_or_404(product_id)
     
     # Initialize spec_data if it doesn't exist (first time viewing)
-    if not product.spec_data or not product.spec_data.get('key_features'):
+    if not product.spec_data:
         # Use PIS sales_arguments as initial key_features
         initial_spec_data = {
             'customer_friendly_description': product.pis_data.get('seo_data', {}).get('seo_long_description', ''),
@@ -722,14 +722,10 @@ def create_specsheet(product_id):
         product.spec_data = initial_spec_data
         db.session.commit()
     
-    # HARD GUARANTEE: Validate key_features is always a valid list
-    if (
-        not product.spec_data.get("key_features")
-        or not isinstance(product.spec_data["key_features"], list)
-        or len(product.spec_data["key_features"]) == 0
-    ):
-        product.spec_data["key_features"] = product.pis_data.get("sales_arguments", [])
-        db.session.commit()
+    # Valid list check for Alpine.js (ensures front-end doesn't break if data is missing)
+    if not product.spec_data.get("key_features") or not isinstance(product.spec_data["key_features"], list):
+        product.spec_data["key_features"] = product.spec_data.get("key_features", []) if isinstance(product.spec_data.get("key_features"), list) else []
+        # Note: We don't overwrite with pis_data anymore to prevent manual edits being lost
     
     if request.method == 'POST':
         if request.form.get('action') == 'submit_director':
@@ -806,16 +802,20 @@ def review_director_spec(product_id):
         if request.form.get('range_overview'):
             updated_pis_data['range_overview'] = request.form.get('range_overview')
         
-        # Update Sales Arguments if edited
+        # Update Sales Arguments if edited (Sync to SpecSheet key_features)
         sales_args = request.form.getlist('sales_argument')
         if sales_args and any(arg.strip() for arg in sales_args):
-            updated_pis_data['sales_arguments'] = [arg.strip() for arg in sales_args if arg.strip()]
+            clean_args = [arg.strip() for arg in sales_args if arg.strip()]
+            updated_pis_data['sales_arguments'] = clean_args
+            updated_spec_data['key_features'] = clean_args
         
-        # Update Technical Specifications if edited
+        # Update Technical Specifications if edited (Sync to SpecSheet)
         tech_spec_keys = request.form.getlist('tech_spec_key')
         tech_spec_values = request.form.getlist('tech_spec_value')
         if tech_spec_keys and tech_spec_values:
-            updated_pis_data['technical_specifications'] = dict(zip(tech_spec_keys, tech_spec_values))
+            specs_dict = dict(zip(tech_spec_keys, tech_spec_values))
+            updated_pis_data['technical_specifications'] = specs_dict
+            updated_spec_data['technical_specifications'] = specs_dict
         
         # Update Warranty if edited
         if request.form.get('warranty_period'):
@@ -923,31 +923,33 @@ def review_director_spec(product_id):
 def download_pis_pdf(product_id):
     product = Product.query.get_or_404(product_id)
     
-    # 1. Process Image to Base64 (Best for Playwright rendering)
-    image_b64 = None
+    # 1. Process ALL Images to Base64 (Main image + Additional images)
+    all_images_b64 = []
+    
+    # Collect all image paths
+    image_paths = []
     if product.image_path:
+        image_paths.append(product.image_path)
+    if product.additional_images:
+        image_paths.extend(product.additional_images)
+        
+    for path in image_paths:
         try:
-            # Construct absolute path
-            img_abs_path = os.path.join(app.root_path, 'static', product.image_path.replace('/', os.sep))
-            
+            img_abs_path = os.path.join(app.root_path, 'static', path.replace('/', os.sep))
             if os.path.exists(img_abs_path):
                 with open(img_abs_path, "rb") as img_file:
-                    # Determine extension
                     ext = os.path.splitext(img_abs_path)[1].lower().replace('.', '')
                     if ext == 'jpg': ext = 'jpeg'
-                    
-                    # Encode
                     b64_data = base64.b64encode(img_file.read()).decode('utf-8')
-                    image_b64 = f"data:image/{ext};base64,{b64_data}"
+                    all_images_b64.append(f"data:image/{ext};base64,{b64_data}")
         except Exception as e:
-            print(f"Image processing error: {e}")
-            image_b64 = None
+            print(f"Image processing error for {path}: {e}")
 
-    # 2. Render HTML Template
+    # 2. Render Template
     html = render_template('pdf_print.html', 
                            data=product.pis_data, 
                            product=product, 
-                           image_b64=image_b64, # Pass Base64 string instead of path
+                           all_images_b64=all_images_b64, # List of images
                            date_generated=datetime.now().strftime("%Y-%m-%d"))
     
     # 3. Generate PDF using Playwright
@@ -977,26 +979,34 @@ def download_pis_pdf(product_id):
 def download_specsheet(product_id):
     product = Product.query.get_or_404(product_id)
     
-    # 1. Process Image to Base64 (Same logic as PIS for consistency)
-    image_b64 = None
+    # 1. Process ALL Images to Base64 (Main image + Additional images)
+    all_images_b64 = []
+    
+    # Collect all image paths
+    image_paths = []
     if product.image_path:
+        image_paths.append(product.image_path)
+    if product.additional_images:
+        image_paths.extend(product.additional_images)
+        
+    for path in image_paths:
         try:
-            img_abs_path = os.path.join(app.root_path, 'static', product.image_path.replace('/', os.sep))
+            img_abs_path = os.path.join(app.root_path, 'static', path.replace('/', os.sep))
             if os.path.exists(img_abs_path):
                 with open(img_abs_path, "rb") as img_file:
                     ext = os.path.splitext(img_abs_path)[1].lower().replace('.', '')
                     if ext == 'jpg': ext = 'jpeg'
                     b64_data = base64.b64encode(img_file.read()).decode('utf-8')
-                    image_b64 = f"data:image/{ext};base64,{b64_data}"
+                    all_images_b64.append(f"data:image/{ext};base64,{b64_data}")
         except Exception as e:
-            print(f"Image error: {e}")
+            print(f"Image processing error for {path}: {e}")
 
     # 2. Render Template
     html = render_template('specsheet_pdf.html', 
                            data=product.pis_data, 
                            spec_data=product.spec_data or {}, 
                            product=product, 
-                           image_b64=image_b64, 
+                           all_images_b64=all_images_b64, # List of images
                            date_generated=datetime.now().strftime("%Y-%m-%d"))
 
     # 3. Generate with Playwright
@@ -1108,6 +1118,89 @@ def api_delete_image(product_id):
     except Exception as e:
         return {"error": str(e)}, 500
 
+
+
+@app.route('/api/product/<int:product_id>/save_draft', methods=['POST'])
+def api_save_draft(product_id):
+    product = Product.query.get_or_404(product_id)
+    data = request.get_json()
+    if not data:
+        return {"error": "No data provided"}, 400
+
+    updated_pis_data = product.pis_data or {}
+    updated_spec_data = product.spec_data or {}
+
+    # 1. Update Header Info (Shared)
+    if 'product_name' in data:
+        if 'header_info' not in updated_pis_data: updated_pis_data['header_info'] = {}
+        updated_pis_data['header_info']['product_name'] = data.get('product_name')
+        updated_pis_data['header_info']['model_number'] = data.get('model_number')
+        updated_pis_data['header_info']['brand'] = data.get('brand')
+        updated_pis_data['header_info']['price_estimate'] = data.get('price_estimate')
+
+    # 2. Update Range Overview / Description (Cross-Sync)
+    if 'range_overview' in data:
+        desc = data.get('range_overview')
+        updated_pis_data['range_overview'] = desc
+        updated_spec_data['customer_friendly_description'] = desc # Sync to SpecSheet
+        updated_spec_data['refined_description'] = desc
+    
+    if 'customer_friendly_description' in data:
+        desc = data.get('customer_friendly_description')
+        updated_spec_data['customer_friendly_description'] = desc
+        updated_spec_data['refined_description'] = desc
+        updated_pis_data['range_overview'] = desc # Sync back to PIS
+
+    # 3. Update Sales Arguments / Key Features (Sync)
+    # Note: frontend sends 'key_features' for specsheet, 'sales_argument' for verify_spec, 'sales_arguments' for marketing
+    features = data.get('key_features') or data.get('sales_argument') or data.get('sales_arguments')
+    if features is not None:
+        if isinstance(features, list):
+            clean_features = [f.strip() for f in features if f.strip()]
+            updated_pis_data['sales_arguments'] = clean_features
+            updated_spec_data['key_features'] = clean_features
+
+    # 4. Update Technical Specifications (Sync)
+    tech_specs = data.get('technical_specifications')
+    if tech_specs is not None:
+        if isinstance(tech_specs, dict):
+            updated_pis_data['technical_specifications'] = tech_specs
+            updated_spec_data['technical_specifications'] = tech_specs
+
+    # 5. Update Warranty
+    if 'warranty_period' in data:
+        if 'warranty_service' not in updated_pis_data: updated_pis_data['warranty_service'] = {}
+        updated_pis_data['warranty_service']['period'] = data.get('warranty_period')
+        updated_pis_data['warranty_service']['coverage'] = data.get('warranty_coverage')
+
+    # 6. Update SEO Meta
+    if 'seo_meta_title' in data:
+        if 'seo' not in updated_spec_data: updated_spec_data['seo'] = {}
+        updated_spec_data['seo']['meta_title'] = data.get('seo_meta_title')
+        updated_spec_data['seo']['meta_description'] = data.get('seo_meta_description')
+        updated_spec_data['seo']['keywords'] = data.get('seo_keywords') or data.get('seo_meta_keywords')
+    
+    # Internal keywords
+    if 'internal_web_keywords' in data:
+        updated_spec_data['internal_web_keywords'] = data.get('internal_web_keywords')
+
+    # 7. Update Categories
+    if 'category_1' in data:
+        if 'categories' not in updated_spec_data: updated_spec_data['categories'] = {}
+        updated_spec_data['categories']['category_1'] = data.get('category_1')
+        updated_spec_data['categories']['category_2'] = data.get('category_2')
+        updated_spec_data['categories']['category_3'] = data.get('category_3')
+
+    # Save
+    product.pis_data = updated_pis_data
+    product.spec_data = updated_spec_data
+    
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(product, 'pis_data')
+    flag_modified(product, 'spec_data')
+    
+    db.session.commit()
+    return {"status": "success"}
 
 
 # --- NEW: SpecSheet AI Generation API ---
