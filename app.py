@@ -1122,6 +1122,40 @@ def api_generate_specsheet(product_id):
     return Response(stream_with_context(generate()), mimetype='application/x-ndjson')
 
 
+@app.route('/purge_all_data', methods=['POST'])
+def purge_all_data():
+    """Nuclear option: Clear all products, history, and uploaded images."""
+    try:
+        # 1. Clear Database Tables
+        ProductHistory.query.delete()
+        Product.query.delete()
+        
+        # 2. Clear Uploads Folder
+        upload_folder = app.config['UPLOAD_FOLDER']
+        if os.path.exists(upload_folder):
+            import shutil
+            for filename in os.listdir(upload_folder):
+                file_path = os.path.join(upload_folder, filename)
+                try:
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)
+                except Exception as e:
+                    print(f'Failed to delete {file_path}. Reason: {e}')
+        
+        db.session.commit()
+        flash("All system data has been successfully cleared.", "success")
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error purging data: {str(e)}", "error")
+    
+    # Redirect back to the dashboard they came from
+    referrer = request.referrer or url_for('login')
+    return redirect(referrer)
+
+
 if __name__ == '__main__':
     # Use PORT from environment (default to 5000)
     port = int(os.environ.get("PORT", 5000))

@@ -255,6 +255,52 @@
         </div>
     </main>
 
+    <!-- GLOBAL PURGE CONFIRMATION MODAL -->
+    <div id="globalPurgeModal"
+        class="fixed inset-0 bg-black/40 hidden items-center justify-center z-[100] backdrop-blur-sm transition-all">
+        <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl transform scale-100 transition-all text-center">
+            <div
+                class="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-sm">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+
+            <h3 class="font-bold text-2xl text-gray-900 mb-3">Clear All Data?</h3>
+            <p class="text-sm text-gray-500 mb-8 leading-relaxed px-4">
+                This is a <span class="font-bold text-red-600 uppercase tracking-tighter">permanent action</span>.
+                All products, history logs, and uploaded images will be <span
+                    class="font-medium text-slate-800">permanently deleted</span> from the system.
+            </p>
+
+            <div class="flex gap-3">
+                <button type="button" onclick="closeGlobalPurgeModal()"
+                    class="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-2xl font-bold hover:bg-gray-200 transition-colors">
+                    Keep Everything
+                </button>
+                <form id="globalPurgeForm" action="{{ url_for('purge_all_data') }}" method="POST" class="flex-1">
+                    <button type="submit" onclick="this.innerHTML='Purging...'; this.disabled=true; this.form.submit();"
+                        class="w-full bg-red-600 text-white py-3.5 rounded-2xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-100">
+                        Yes, Clear All
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openGlobalPurgeModal() {
+            const modal = document.getElementById('globalPurgeModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeGlobalPurgeModal() {
+            const modal = document.getElementById('globalPurgeModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
 </body>
 
 </html>
