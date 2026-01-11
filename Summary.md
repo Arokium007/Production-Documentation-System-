@@ -51,7 +51,7 @@ This document provides a comprehensive overview of the J. Kalachand Product Info
 -   `Flask-SQLAlchemy`: Database ORM.
 -   `google-generativeai`: Google Gemini API client.
 -   `requests` & `beautifulsoup4`: Web scraping and HTTP requests.
--   `xhtml2pdf` & `PyMuPDF (fitz)`: PDF generation and manipulation.
+-   `PyMuPDF (fitz)`: PDF image extraction.
 -   `Pillow (PIL)`: Image processing.
 -   `duckduckgo-search` & `playwright`: Alternative search and headless browsing.
 -   `python-dotenv`: Environment variable management.

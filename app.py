@@ -9,20 +9,10 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import google.generativeai as genai
 from model import db, Product, ProductHistory
-from io import BytesIO
-import io
-from xhtml2pdf import pisa
 from datetime import datetime, timedelta
-import fitz  
-from PIL import Image
-import itertools
-import random
-import shutil 
 from duckduckgo_search import DDGS
-from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 import base64
-from urllib.parse import urlparse
 
 load_dotenv()
 
