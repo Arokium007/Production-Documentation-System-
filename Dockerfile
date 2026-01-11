@@ -1,16 +1,16 @@
-# Use official Python runtime as a parent image
-FROM python:3.11-slim
+# Use official Playwright Python image which has all browser dependencies pre-installed
+FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV FLASK_APP app.py
-ENV PORT 5000
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=app.py
+ENV PORT=5000
 
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies for Playwright and other tools
+# Install system dependencies (build-essential for potential C-extensions)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -21,9 +21,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright and browser dependencies
+# Browsers are already installed in the base image, but we ensure chromium is ready
 RUN playwright install chromium
-RUN playwright install-deps chromium
 
 # Copy project
 COPY . /app/
