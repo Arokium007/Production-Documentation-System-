@@ -82,22 +82,7 @@
             </div>
         </div>
 
-        {# --- TOP BANNER DIRECTOR NOTES --- #}
-        {% if product.director_spec_comments %}
-        <div class="mx-8 mt-6 bg-red-50 border border-red-200 rounded-xl p-4">
-            <div class="flex items-center gap-2 mb-2">
-                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6
-                      a2 2 0 012-2h14a2 2 0 012 2v8
-                      a2 2 0 01-2 2h-3l-4 4z" />
-                </svg>
-                <h3 class="text-sm font-bold text-red-800">Director Feedback</h3>
-            </div>
-            <p class="text-sm text-red-700 italic leading-relaxed">
-                "{{ product.director_spec_comments }}"
-            </p>
-        </div>
-        {% endif %}
+
 
         <div class="mt-8 px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
@@ -478,8 +463,7 @@
                 </div>
                 {% endif %}
 
-                <div
-                    class="sticky top-{% if product.director_spec_comments %}64{% else %}28{% endif %} section-card p-5">
+                <div class="sticky top-28 section-card p-5">
                     <div class="flex justify-between items-center mb-3">
                         <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Visual Gallery</p>
                         <button type="button" onclick="document.getElementById('imageUpload').click()"
@@ -965,41 +949,9 @@
     window.addEventListener("resize", updateScrollProgress);
 </script>
 
-<!-- SUBMIT CONFIRMATION MODAL -->
-<div id="submitModal"
-    class="fixed inset-0 bg-slate-900/40 hidden items-center justify-center z-[100] backdrop-blur-sm transition-all duration-300">
-    <div
-        class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl transform scale-100 transition-all text-center mx-4">
-        <div
-            class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mb-6 mx-auto shadow-sm ring-4 ring-indigo-50/50">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
 
-        <h3 class="font-bold text-2xl text-slate-900 mb-3 tracking-tight">Ready for Review?</h3>
-        <p class="text-sm text-slate-500 mb-8 leading-relaxed px-4">
-            You are about to send <span class="font-bold text-slate-900">{{ product.model_name }}</span> to the
-            Director. They will be notified to review and approve this SpecSheet.
-        </p>
 
-        <div class="flex flex-col sm:flex-row gap-3">
-            <button type="button" onclick="closeSubmitModal()"
-                class="flex-1 px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95">
-                Go Back
-            </button>
-            <button type="button" onclick="confirmSubmit(event)"
-                class="flex-1 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-95 flex items-center justify-center gap-2">
-                <span>Submit Now</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                </svg>
-            </button>
-        </div>
-    </div>
-</div>
+
 
 <script>
     function openSubmitModal() {
@@ -1038,4 +990,42 @@
     }
 </script>
 
+{% endblock %}
+
+{% block modals %}
+<!-- SUBMIT CONFIRMATION MODAL -->
+<div id="submitModal"
+    class="fixed inset-0 bg-slate-900/40 hidden items-center justify-center z-[100] backdrop-blur-sm transition-all duration-300">
+    <div
+        class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl transform scale-100 transition-all text-center mx-4">
+        <div
+            class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mb-6 mx-auto shadow-sm ring-4 ring-indigo-50/50">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+
+        <h3 class="font-bold text-2xl text-slate-900 mb-3 tracking-tight">Ready for Review?</h3>
+        <p class="text-sm text-slate-500 mb-8 leading-relaxed px-4">
+            You are about to send <span class="font-bold text-slate-900">{{ product.model_name }}</span> to the
+            Director. They will be notified to review and approve this SpecSheet.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+            <button type="button" onclick="closeSubmitModal()"
+                class="flex-1 px-6 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95">
+                Go Back
+            </button>
+            <button type="button" onclick="confirmSubmit(event)"
+                class="flex-1 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-95 flex items-center justify-center gap-2">
+                <span>Submit Now</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
