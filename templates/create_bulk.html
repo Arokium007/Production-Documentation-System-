@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-12 px-4" x-data="{ isProcessing: false, progress: 0, statusMessage: 'Preparing...' }">
+<div class="max-w-4xl mx-auto py-12 px-4" x-data="{ 
+    isProcessing: false, 
+    progress: 0, 
+    statusMessage: 'Preparing...',
+    extractedProducts: []
+}">
 
     <!-- HEADER SECTION -->
     <div class="text-center mb-12 animate-fade-in">
@@ -108,17 +113,13 @@
         </form>
     </div>
 
-    <!-- MODERN LOADING MODAL -->
-    <template x-if="isProcessing">
+    <!-- PHASE 1: INITIAL CENTERED MODAL -->
+    <template x-if="isProcessing && extractedProducts.length === 0">
         <div
             class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-fade-in shadow-2xl">
             <div
                 class="bg-white rounded-[3rem] w-full max-w-lg p-12 text-center shadow-2xl animate-scale-up border border-white/20 relative overflow-hidden">
-
-                <!-- Background Decoration -->
                 <div class="absolute -top-12 -right-12 w-48 h-48 bg-red-50 rounded-full blur-3xl opacity-60"></div>
-                <div class="absolute -bottom-12 -left-12 w-48 h-48 bg-indigo-50 rounded-full blur-3xl opacity-60"></div>
-
                 <div class="relative z-10">
                     <div
                         class="w-24 h-24 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mb-10 mx-auto shadow-sm ring-8 ring-red-50/50">
@@ -127,37 +128,133 @@
                                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                     </div>
-
                     <h3 class="font-extrabold text-3xl text-slate-900 mb-4 tracking-tight" x-text="statusMessage"></h3>
-                    <p class="text-sm text-slate-500 mb-12 leading-relaxed px-8">
-                        This may take a few moments depending on thefile complexity.
+                    <p class="text-sm text-slate-500 mb-12 leading-relaxed px-8">Preparing document for AI scanning...
                     </p>
-
-                    <!-- PROGRESS BAR -->
-                    <div class="px-6 mb-2 flex justify-between items-end">
-                        <span class="text-[10px] font-bold text-red-500 uppercase tracking-widest">Processing</span>
-                        <span class="text-sm font-black text-slate-900" x-text="`${progress}%` font-bold"></span>
-                    </div>
                     <div class="w-full bg-slate-100 rounded-full h-4 relative overflow-hidden ring-4 ring-slate-50">
                         <div class="h-full bg-gradient-to-r from-red-500 to-red-700 transition-all duration-700 ease-out shadow-[0_0_15px_rgba(220,38,38,0.4)]"
                             :style="`width: ${progress}%`"></div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </template>
 
-                    <div class="mt-12 flex items-center justify-center gap-6">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vision
-                                scan</span>
+    <!-- PHASE 2: SLIDE-IN SIDEBAR (EXTRACTED PRODUCTS) -->
+    <template x-if="isProcessing && extractedProducts.length > 0">
+        <div class="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-sm animate-fade-in"
+            @click.self="isProcessing = false">
+            <div class="bg-white h-full w-full max-w-md shadow-2xl relative flex flex-col overflow-hidden animate-slide-in-right border-l border-slate-100"
+                @click.stop>
+                <!-- MODAL HEADER -->
+                <div class="p-8 border-b border-slate-50 bg-slate-50/50">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div
+                            class="w-12 h-12 bg-red-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-red-200">
+                            <svg class="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 rounded-full bg-red-300 animate-pulse delay-75"></div>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data
-                                extraction</span>
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-900" x-text="statusMessage"></h3>
+                            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Bulk Extraction
+                                in Progress</p>
                         </div>
                     </div>
 
-                    <p class="text-[10px] text-slate-300 mt-8 font-medium uppercase tracking-widest">Do not close or
-                        refresh this page</p>
+                    <!-- OVERALL PROGRESS -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-end">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total
+                                Completion</span>
+                            <span class="text-sm font-black text-red-600" x-text="`${progress}%`"></span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div class="h-full bg-red-600 transition-all duration-500" :style="`width: ${progress}%`">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRODUCT LIST SECTION -->
+                <div class="flex-1 overflow-y-auto p-6 space-y-3 bg-white">
+                    <div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-4 px-2">
+                        Detected Products (<span x-text="extractedProducts.length"></span>)
+                    </div>
+
+                    <template x-for="(product, index) in extractedProducts" :key="index">
+                        <div class="group flex items-center justify-between p-4 rounded-2xl border transition-all duration-300"
+                            :class="{
+                                'bg-slate-50 border-slate-100': product.status === 'pending',
+                                'bg-red-50/50 border-red-100 ring-2 ring-red-500/10 scale-[1.02] shadow-sm': product.status === 'searching',
+                                'bg-green-50 border-green-100': product.status === 'completed'
+                            }">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <!-- Status Icon -->
+                                <div class="shrink-0">
+                                    <template x-if="product.status === 'pending'">
+                                        <div
+                                            class="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                                            <span class="text-[10px] font-bold" x-text="index + 1"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="product.status === 'searching'">
+                                        <div
+                                            class="w-8 h-8 rounded-xl bg-red-500 text-white flex items-center justify-center shadow-lg shadow-red-200">
+                                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                    stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                    </template>
+                                    <template x-if="product.status === 'completed'">
+                                        <div
+                                            class="w-8 h-8 rounded-xl bg-green-500 text-white flex items-center justify-center shadow-lg shadow-green-200">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                                    d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-slate-900 truncate" x-text="product.name"></p>
+                                    <p class="text-[10px] font-bold uppercase tracking-wider" :class="{
+                                           'text-slate-400': product.status === 'pending',
+                                           'text-red-500': product.status === 'searching',
+                                           'text-green-600': product.status === 'completed'
+                                       }" x-text="product.status"></p>
+                                </div>
+                            </div>
+
+                            <!-- Animated lines for searching -->
+                            <template x-if="product.status === 'searching'">
+                                <div class="flex gap-1 pr-2">
+                                    <div class="w-1 h-3 bg-red-500 animate-[bounce_1s_infinite_0s] rounded-full"></div>
+                                    <div class="w-1 h-3 bg-red-500 animate-[bounce_1s_infinite_0.2s] rounded-full">
+                                    </div>
+                                    <div class="w-1 h-3 bg-red-500 animate-[bounce_1s_infinite_0.4s] rounded-full">
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- FOOTER -->
+                <div class="p-8 border-t border-slate-50 bg-slate-50/30 text-center">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
+                        Scanning document & finding product images... <br>
+                        Please keep this tab open.
+                    </p>
                 </div>
             </div>
         </div>
@@ -207,6 +304,20 @@
         }
     }
 
+    @keyframes slide-in-right {
+        0% {
+            transform: translateX(100%);
+        }
+
+        100% {
+            transform: translateX(0);
+        }
+    }
+
+    .animate-slide-in-right {
+        animation: slide-in-right 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
     .animate-slide-up {
         animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
@@ -245,6 +356,20 @@
                             if (data.progress) alpineData.progress = data.progress;
                             if (data.message) alpineData.statusMessage = data.message;
                             if (data.redirect) window.location.href = data.redirect;
+
+                            // NEW: Handle products list
+                            if (data.products) {
+                                alpineData.extractedProducts = data.products;
+                            }
+
+                            // NEW: Handle individual item updates
+                            if (data.item_update) {
+                                const index = alpineData.extractedProducts.findIndex(p => p.name === data.item_update.name);
+                                if (index !== -1) {
+                                    alpineData.extractedProducts[index].status = data.item_update.status;
+                                }
+                            }
+
                             if (data.error) {
                                 alert("Error: " + data.error);
                                 alpineData.isProcessing = false;

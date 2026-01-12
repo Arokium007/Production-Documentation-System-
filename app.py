@@ -47,7 +47,7 @@ from utils.image_processing import (
     clean_search_query,
     ai_validate_image,
     download_image_bytes,
-    find_best_image,
+    find_best_images,
     find_and_validate_image,
     download_web_image
 )
@@ -453,7 +453,21 @@ def create_bulk():
             try:
                 products_list = generate_bulk_pis_data(ai_filepath, site_data)
                 total_items = len(products_list)
-                yield json.dumps({"progress": 20, "message": f"Found {total_items} items. Starting Google Search..."}) + "\n"
+                
+                # Yield the list of product names to the frontend early
+                product_names = []
+                for idx, p_data in enumerate(products_list):
+                    header = p_data.get('header_info', {})
+                    p_name = header.get('product_name')
+                    m_num = header.get('model_number')
+                    d_name = p_name if p_name else (m_num if m_num else f"Item_{idx+1}")
+                    product_names.append(d_name)
+                
+                yield json.dumps({
+                    "progress": 20, 
+                    "message": f"Found {total_items} items.",
+                    "products": [{"name": name, "status": "pending"} for name in product_names]
+                }) + "\n"
 
                 with app.app_context():
                     processed_count = 0
@@ -485,7 +499,11 @@ def create_bulk():
                         
                         search_query = " ".join(unique_words) if unique_words else display_name
                         
-                        yield json.dumps({"progress": current_progress, "message": f"Searching: {search_query}"}) + "\n"
+                        yield json.dumps({
+                            "progress": current_progress, 
+                            "message": f"Processing: {display_name}",
+                            "item_update": {"name": display_name, "status": "searching"}
+                        }) + "\n"
 
                         # Primary Search: Google
                         image_url = find_and_validate_image(search_query, supplier_url)
@@ -508,6 +526,10 @@ def create_bulk():
                         db.session.add(new_product)
                         db.session.commit()
                         log_event(new_product.id, 'Marketing Team', 'PIS Draft Created', 'Imported via Bulk Tool.', 'neutral')
+
+                        yield json.dumps({
+                            "item_update": {"name": display_name, "status": "completed"}
+                        }) + "\n"
 
                 yield json.dumps({"progress": 100, "message": "Bulk Import Complete!", "redirect": url_for('dashboard_marketing')}) + "\n"
             
@@ -710,6 +732,7 @@ def create_specsheet(product_id):
     if not product.spec_data:
         # Use PIS sales_arguments as initial key_features
         initial_spec_data = {
+            'header_info': product.pis_data.get('header_info', {}),
             'customer_friendly_description': product.pis_data.get('seo_data', {}).get('seo_long_description', ''),
             'key_features': product.pis_data.get('sales_arguments', []),
             'internal_web_keywords': product.pis_data.get('seo_data', {}).get('generated_keywords', ''),
@@ -735,6 +758,19 @@ def create_specsheet(product_id):
         # Save edits to spec data
         spec_data = product.spec_data or {}
         
+        # Save Header Info (Cross-Sync with PIS)
+        if 'header_info' not in spec_data: spec_data['header_info'] = {}
+        if 'header_info' not in product.pis_data: product.pis_data['header_info'] = {}
+        
+        h_info = {
+            'product_name': request.form.get('product_name'),
+            'model_number': request.form.get('model_number'),
+            'brand': request.form.get('brand'),
+            'price_estimate': request.form.get('price_estimate')
+        }
+        spec_data['header_info'] = h_info
+        product.pis_data['header_info'] = h_info # keep PIS in sync for PDF
+
         # Save New Fields
         spec_data['customer_friendly_description'] = request.form.get('customer_friendly_description')
         
@@ -1133,10 +1169,16 @@ def api_save_draft(product_id):
     # 1. Update Header Info (Shared)
     if 'product_name' in data:
         if 'header_info' not in updated_pis_data: updated_pis_data['header_info'] = {}
-        updated_pis_data['header_info']['product_name'] = data.get('product_name')
-        updated_pis_data['header_info']['model_number'] = data.get('model_number')
-        updated_pis_data['header_info']['brand'] = data.get('brand')
-        updated_pis_data['header_info']['price_estimate'] = data.get('price_estimate')
+        if 'header_info' not in updated_spec_data: updated_spec_data['header_info'] = {}
+        
+        h_info = {
+            'product_name': data.get('product_name'),
+            'model_number': data.get('model_number'),
+            'brand': data.get('brand'),
+            'price_estimate': data.get('price_estimate')
+        }
+        updated_pis_data['header_info'] = h_info
+        updated_spec_data['header_info'] = h_info
 
     # 2. Update SHORT DESCRIPTION / Description (Cross-Sync)
     if 'range_overview' in data:
@@ -1190,6 +1232,14 @@ def api_save_draft(product_id):
         updated_spec_data['categories']['category_1'] = data.get('category_1')
         updated_spec_data['categories']['category_2'] = data.get('category_2')
         updated_spec_data['categories']['category_3'] = data.get('category_3')
+
+    # 8. Update Director General Comments (Internal auto-save from review modals)
+    if 'director_general_comments' in data:
+        comments = data.get('director_general_comments')
+        if 'pending_director_pis' in product.workflow_stage or 'marketing_changes' in product.workflow_stage:
+            product.director_pis_comments = comments
+        elif 'pending_director_spec' in product.workflow_stage or 'web_changes' in product.workflow_stage:
+            product.director_spec_comments = comments
 
     # Save
     product.pis_data = updated_pis_data
@@ -1275,3 +1325,5 @@ if __name__ == '__main__':
     # Use PORT from environment (default to 5000)
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
+    
+    

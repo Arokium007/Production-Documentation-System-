@@ -263,133 +263,143 @@
                     </div>
                 </div>
 
-            </div>
-        </div>
+                <!-- ================= APPROVE MODAL ================= -->
+                <div id="approveModal"
+                    class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[100] backdrop-blur-md animate-fade-in shadow-2xl">
+                    <div
+                        class="bg-white rounded-[3rem] w-full max-w-md p-10 shadow-2xl animate-scale-up border border-white/20 relative overflow-hidden text-center">
+                        <!-- Initial State -->
+                        <div id="approveInitial">
+                            <div
+                                class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mb-6 mx-auto shadow-sm ring-8 ring-emerald-50/50">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h3 class="font-extrabold text-2xl text-slate-900 mb-2 tracking-tight">Confirm Approval</h3>
+                            <p class="text-sm text-slate-500 mb-8 leading-relaxed px-4">
+                                Are you sure you want to approve <span class="font-bold text-slate-900">{{
+                                    product.model_name
+                                    }}</span>?
+                                This will initialize the SpecSheet for the Web Team.
+                            </p>
+                            <div class="flex gap-3">
+                                <button type="button" onclick="closeApproveModal()"
+                                    class="flex-1 px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95">
+                                    Cancel
+                                </button>
+                                <button type="button" onclick="submitApprove()"
+                                    class="flex-1 px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95">
+                                    Yes, Approve
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div id="approveLoading" class="hidden">
+                            <div
+                                class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mb-8 mx-auto shadow-sm ring-8 ring-emerald-50/50">
+                                <svg class="animate-spin w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4">
+                                    </circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="font-extrabold text-2xl text-slate-900 mb-2 tracking-tight">Approving PIS...</h3>
+                            <p class="text-sm text-slate-500">Wait while we initialize technical data.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= REVIEW MODAL ================= -->
+                <div id="reviewModal"
+                    class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[100] backdrop-blur-md animate-fade-in shadow-2xl">
+                    <div
+                        class="bg-white rounded-[3rem] w-full max-w-lg p-10 shadow-2xl animate-scale-up border border-white/20 relative overflow-hidden">
+
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="text-2xl font-extrabold text-slate-900 tracking-tight">Request Changes</h3>
+                            <button type="button" onclick="closeReviewModal()"
+                                class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div
+                            class="bg-red-50 border border-red-100 rounded-2xl p-4 text-sm text-red-800 mb-8 flex items-start gap-3 shadow-sm">
+                            <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <p class="font-medium leading-relaxed">This will return the PIS to the <span
+                                    class="font-bold">Marketing
+                                    Team</span> with your instructions below.</p>
+                        </div>
+
+                        <div id="reviewSummary"
+                            class="bg-slate-50 rounded-2xl p-5 text-sm max-h-48 overflow-y-auto mb-8 space-y-3 border border-slate-100 shadow-inner">
+                            <p class="text-slate-400 italic text-xs text-center py-2">No specific section comments added
+                                yet.</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">General
+                                Comments <span class="font-normal lowercase text-slate-300">(Optional)</span></label>
+                            <textarea name="director_general_comments" rows="3"
+                                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-red-500/5 focus:border-red-400 focus:bg-white outline-none transition-all placeholder-slate-300 resize-none leading-relaxed"
+                                placeholder="Any overall feedback or specific guidance for the team...">{{ product.director_pis_comments or '' }}</textarea>
+                        </div>
+
+                        <div class="flex gap-3 mt-10">
+                            <button type="button" onclick="closeReviewModal()"
+                                class="flex-1 px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95">
+                                Keep Reviewing
+                            </button>
+                            <button type="button" onclick="submitReview()"
+                                class="flex-1 px-6 py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100 active:scale-95">
+                                Send Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= PROCESSING MODAL ================= -->
+                <div id="loadingModal"
+                    class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[101] backdrop-blur-md animate-fade-in">
+                    <div
+                        class="bg-white rounded-[3rem] w-full max-w-md p-12 shadow-2xl text-center animate-scale-up border border-white/20 relative overflow-hidden">
+                        <div class="absolute -top-12 -right-12 w-48 h-48 bg-red-50 rounded-full blur-3xl opacity-60">
+                        </div>
+
+                        <div class="relative z-10">
+                            <div
+                                class="w-20 h-20 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mb-10 mx-auto shadow-sm ring-8 ring-red-50/50">
+                                <svg class="animate-spin w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4">
+                                    </circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="font-extrabold text-2xl text-slate-900 mb-2 tracking-tight">Processing...</h3>
+                            <p class="text-sm text-slate-500 px-4">Updating product state and notifying the team.</p>
+                        </div>
+                    </div>
+                </div>
     </form>
 </div>
-
-<!-- ================= APPROVE MODAL ================= -->
-<div id="approveModal"
-    class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[100] backdrop-blur-md animate-fade-in shadow-2xl">
-    <div
-        class="bg-white rounded-[3rem] w-full max-w-md p-10 shadow-2xl animate-scale-up border border-white/20 relative overflow-hidden text-center">
-        <!-- Initial State -->
-        <div id="approveInitial">
-            <div
-                class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mb-6 mx-auto shadow-sm ring-8 ring-emerald-50/50">
-                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <h3 class="font-extrabold text-2xl text-slate-900 mb-2 tracking-tight">Confirm Approval</h3>
-            <p class="text-sm text-slate-500 mb-8 leading-relaxed px-4">
-                Are you sure you want to approve <span class="font-bold text-slate-900">{{ product.model_name }}</span>?
-                This will initialize the SpecSheet for the Web Team.
-            </p>
-            <div class="flex gap-3">
-                <button type="button" onclick="closeApproveModal()"
-                    class="flex-1 px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95">
-                    Cancel
-                </button>
-                <button type="button" onclick="submitApprove()"
-                    class="flex-1 px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95">
-                    Yes, Approve
-                </button>
-            </div>
-        </div>
-
-        <!-- Loading State -->
-        <div id="approveLoading" class="hidden">
-            <div
-                class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mb-8 mx-auto shadow-sm ring-8 ring-emerald-50/50">
-                <svg class="animate-spin w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                    </path>
-                </svg>
-            </div>
-            <h3 class="font-extrabold text-2xl text-slate-900 mb-2 tracking-tight">Approving PIS...</h3>
-            <p class="text-sm text-slate-500">Wait while we initialize technical data.</p>
-        </div>
-    </div>
-</div>
-
-<!-- ================= REVIEW MODAL ================= -->
-<div id="reviewModal"
-    class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[100] backdrop-blur-md animate-fade-in shadow-2xl">
-    <div
-        class="bg-white rounded-[3rem] w-full max-w-lg p-10 shadow-2xl animate-scale-up border border-white/20 relative overflow-hidden">
-
-        <div class="flex items-center justify-between mb-8">
-            <h3 class="text-2xl font-extrabold text-slate-900 tracking-tight">Request Changes</h3>
-            <button onclick="closeReviewModal()"
-                class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-
-        <div
-            class="bg-red-50 border border-red-100 rounded-2xl p-4 text-sm text-red-800 mb-8 flex items-start gap-3 shadow-sm">
-            <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <p class="font-medium leading-relaxed">This will return the PIS to the <span class="font-bold">Marketing
-                    Team</span> with your instructions below.</p>
-        </div>
-
-        <div id="reviewSummary"
-            class="bg-slate-50 rounded-2xl p-5 text-sm max-h-48 overflow-y-auto mb-8 space-y-3 border border-slate-100 shadow-inner">
-            <p class="text-slate-400 italic text-xs text-center py-2">No specific section comments added yet.</p>
-        </div>
-
-        <div class="space-y-4">
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">General Comments <span
-                    class="font-normal lowercase text-slate-300">(Optional)</span></label>
-            <textarea name="director_general_comments" rows="3"
-                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-red-500/5 focus:border-red-400 focus:bg-white outline-none transition-all placeholder-slate-300 resize-none leading-relaxed"
-                placeholder="Any overall feedback or specific guidance for the team..."></textarea>
-        </div>
-
-        <div class="flex gap-3 mt-10">
-            <button type="button" onclick="closeReviewModal()"
-                class="flex-1 px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95">
-                Keep Reviewing
-            </button>
-            <button type="button" onclick="submitReview()"
-                class="flex-1 px-6 py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100 active:scale-95">
-                Send Request
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- ================= PROCESSING MODAL ================= -->
-<div id="loadingModal"
-    class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[101] backdrop-blur-md animate-fade-in">
-    <div
-        class="bg-white rounded-[3rem] w-full max-w-md p-12 shadow-2xl text-center animate-scale-up border border-white/20 relative overflow-hidden">
-        <div class="absolute -top-12 -right-12 w-48 h-48 bg-red-50 rounded-full blur-3xl opacity-60"></div>
-
-        <div class="relative z-10">
-            <div
-                class="w-20 h-20 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mb-10 mx-auto shadow-sm ring-8 ring-red-50/50">
-                <svg class="animate-spin w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                    </path>
-                </svg>
-            </div>
-            <h3 class="font-extrabold text-2xl text-slate-900 mb-2 tracking-tight">Processing...</h3>
-            <p class="text-sm text-slate-500 px-4">Updating product state and notifying the team.</p>
-        </div>
-    </div>
 </div>
 
 <style>

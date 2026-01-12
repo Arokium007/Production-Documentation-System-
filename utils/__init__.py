@@ -9,7 +9,7 @@ from .image_processing import (
     clean_search_query,
     ai_validate_image,
     download_image_bytes,
-    find_best_image,
+    find_best_images,
     find_and_validate_image,
     download_web_image
 )
@@ -35,7 +35,7 @@ __all__ = [
     'clean_search_query',
     'ai_validate_image',
     'download_image_bytes',
-    'find_best_image',
+    'find_best_images',
     'find_and_validate_image',
     'download_web_image',
     # Web scraping
