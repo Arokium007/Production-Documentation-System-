@@ -702,6 +702,12 @@
     // Listen for all input changes in the form
     document.getElementById('verifyForm').addEventListener('input', () => debouncedSave());
 
+    // Listen for general comments textarea (outside form)
+    const extCommentsArea = document.getElementsByName('director_general_comments_ext')[0];
+    if (extCommentsArea) {
+        extCommentsArea.addEventListener('input', () => debouncedSave());
+    }
+
     // Listen for add/remove buttons or other clicks that affect data
     document.getElementById('verifyForm').addEventListener('click', (e) => {
         if (e.target.closest('button') && !e.target.closest('button[type="submit"]')) {
