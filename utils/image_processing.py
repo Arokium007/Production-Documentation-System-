@@ -35,7 +35,7 @@ def search_google_api(query: str, domain: str | None = None) -> list[str]:
         "cx": cx,
         "key": api_key,
         "searchType": "image",
-        "num": 5,  # Fetch up to 5 results
+        "num": 10,  # Fetch up to 10 results
         "imgSize": "large",
         "safe": "active",
     }
@@ -136,6 +136,57 @@ Respond ONLY with JSON:
     except Exception as e:
         print(f"AI image validation failed for '{product_name}':", e)
         return False
+
+
+def ai_select_best_image(image_list: list[bytes], product_name: str) -> int | None:
+    """
+    Evaluates a list of images simultaneously and selects the best 'Hero Shot'.
+    Returns the index (0-based) of the best image, or None if none are suitable.
+    """
+    if not image_list:
+        return None
+
+    model = genai.GenerativeModel("models/gemini-flash-latest")
+
+    prompt = f"""
+    You are an expert Visual Quality Controller for an e-commerce catalog.
+    Product Name: "{product_name}"
+
+    TASK:
+    Review the attached images (labeled 1 to {len(image_list)}) and select the SINGLE BEST 'Hero Shot'.
+    A 'Hero Shot' is a clean, professional, high-quality photograph of the main product.
+
+    CRITICAL RULES:
+    1. AVOID technical diagrams, line drawings, or sketches.
+    2. AVOID internally-focused images (e.g., a photo of a motor, a gear, or a control panel circuit).
+    3. AVOID images that are extremely blurry or watermarked.
+    4. PREFER images on a white or clean studio background.
+    5. If all images are poor or irrelevant, return "none".
+
+    Output strictly valid JSON:
+    {{ "best_index": 1 }} or {{ "best_index": "none" }}
+    """
+
+    content = [prompt]
+    for i, img_bytes in enumerate(image_list):
+        content.append(f"IMAGE {i+1}:")
+        content.append({"mime_type": "image/jpeg", "data": img_bytes})
+
+    try:
+        response = model.generate_content(
+            content,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        result = json.loads(response.text)
+        best = result.get("best_index")
+        
+        if best == "none" or best is None:
+            return None
+        
+        return int(best) - 1 # Convert 1-based to 0-based
+    except Exception as e:
+        print(f"Batch AI Image Selection failed: {e}")
+        return None
 
 
 
@@ -251,28 +302,41 @@ def find_best_images(model_name: str, supplier_url: str | None = None) -> list[s
 
 
 def find_and_validate_image(model_name: str, supplier_url: str | None = None) -> str | None:
+    """
+    Finds and validates the best product image using a batch selection strategy.
+    """
     image_candidates = find_best_images(model_name, supplier_url)
     
     if not image_candidates:
         print("🚫 No image candidates found")
         return None
 
-    print(f"🔄 Evaluating {len(image_candidates)} candidate images")
+    print(f"🔄 Evaluating {len(image_candidates)} candidate images in batch")
     
-    for i, image_url in enumerate(image_candidates):
-        print(f"--- Testing candidate {i+1}/{len(image_candidates)}: {image_url} ---")
-        
+    downloaded_bytes = []
+    downloaded_urls = []
+    
+    # Download a batch of candidates (up to 8) for simultaneous AI evaluation
+    for i, image_url in enumerate(image_candidates[:8]):
+        print(f"--- Downloading candidate {i+1}: {image_url} ---")
         image_bytes = download_image_bytes(image_url)
-        if not image_bytes:
-            continue
+        if image_bytes:
+            downloaded_bytes.append(image_bytes)
+            downloaded_urls.append(image_url)
+    
+    if not downloaded_bytes:
+        print("🚫 No images could be downloaded for evaluation")
+        return None
+        
+    print(f"🧠 Sending {len(downloaded_bytes)} candidates to AI for ranking...")
+    best_index = ai_select_best_image(downloaded_bytes, model_name)
+    
+    if best_index is not None and 0 <= best_index < len(downloaded_urls):
+        selected_url = downloaded_urls[best_index]
+        print(f"✔ AI selected best image (Candidate {best_index + 1}): {selected_url}")
+        return selected_url
 
-        if ai_validate_image(image_bytes, model_name):
-            print(f"✔ AI approved image: {image_url}")
-            return image_url
-
-        print(f"❌ AI rejected image {i+1}")
-
-    print("🚫 No acceptable image found after checking all candidates")
+    print("🚫 No acceptable image selected by AI in batch evaluation")
     return None
 
 

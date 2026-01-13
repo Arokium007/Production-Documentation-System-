@@ -20,17 +20,31 @@ def generate_pis_data(file_path, model_name, url_data):
     
     # Context Construction
     web_context = ""
+    image_candidates_str = ""
     if url_data.get('text'):
-        web_context = f"WEBSITE TEXT CONTENT: {url_data['text']}\n\nWEBSITE HTML (For Image URLs): {url_data['html']}"
+        web_context = f"WEBSITE TEXT CONTENT: {url_data['text']}\n\nWEBSITE HTML (Partial): {url_data['html']}"
+        candidates = url_data.get('image_candidates', [])
+        image_candidates_str = "IMAGE CANDIDATES (Ranked by crawler):\n" + "\n".join([f"- {url}" for url in candidates])
 
     model = genai.GenerativeModel('models/gemini-flash-latest')
 
     prompt = f"""
-    You are an expert Product Data Specialist. 
-    1. Analyze the uploaded document (Proforma Invoice/Spec Sheet).
-    2. Analyze the provided Website Context.
-    3. Research details for "{model_name}".
-    4. **CRITICAL**: Search the 'WEBSITE HTML' to find the most accurate **Product Image URL** (jpg/png).
+    You are an expert Product Data Specialist and Technical Researcher.
+    
+    TASK:
+    1. EXTENSIVE RESEARCH: Analyze the uploaded document (Proforma Invoice/Spec Sheet) and the provided Website Context.
+    2. FACTUAL INTEGRITY: Identify specific technical features, performance metrics, and unique selling points.
+    3. **STRICT RULES**: 
+       - DO NOT invent, assume, or hallucinate any details.
+       - If a detail is not in the document or website context, omit it or state it's unavailable.
+       - **INDEPENDENT CONTENT**: This description must be standalone. NEVER refer to other products, model variations, or colors in your text. Each overview must be unique and fully populated.
+    4. HERO IMAGE SELECTION:
+       - Review the 'IMAGE CANDIDATES' list below.
+       - **CRITICAL**: Select the single URL that represents the **HERO SHOT** (main product image).
+       - AVOID diagrams, technical drawings, internal components, icons, or secondary gallery thumbnails.
+       - If no clear hero shot exists in the list, fallback to searching the 'WEBSITE HTML' for a high-quality img tag.
+    
+    {image_candidates_str}
     
     {web_context}
     
@@ -42,14 +56,14 @@ def generate_pis_data(file_path, model_name, url_data):
             "brand": "String",
             "price_estimate": "String"
         }},
-        "found_image_url": "String (URL of the product image found in HTML, or null)",
+        "found_image_url": "String (Selected Hero Shot URL, or null)",
         "seo_data": {{
             "generated_keywords": "Comma-separated string",
             "meta_title": "Max 60 chars",
             "meta_description": "Max 160 chars",
             "seo_long_description": "2 paragraphs"
         }},
-        "range_overview": "2-sentence summary",
+        "range_overview": "A comprehensive 2-4 paragraph technical and marketing overview. Deep-dive into technology, build quality, and use cases as found in the research data.",
         "sales_arguments": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"],
         "technical_specifications": {{ "Spec Name": "Value" }},
         "warranty_service": {{ "period": "String", "coverage": "String" }}
@@ -85,10 +99,11 @@ def generate_comprehensive_spec_data(pis_data):
     - Do NOT merge multiple points into one
     - Keep each output item concise and persuasive
     - Focus on customer benefits, not technical specs
+    - **FACTUAL INTEGRITY**: Use ONLY the provided source data. Do NOT invent or hallucinate any details.
 
     Also create:
-    1. A compelling 1-2 paragraph customer-facing product description
-    2. SEO metadata optimized for MAURITIUS market specific keywords
+    1. A detailed 3-4 paragraph customer-facing product description focused on lifestyle benefits and technical excellence.
+    2. SEO metadata optimized for MAURITIUS market specific keywords.
     
     SEO REQUIREMENTS:
     - Keywords MUST focus on Mauritius-specific search terms
@@ -99,7 +114,7 @@ def generate_comprehensive_spec_data(pis_data):
     
     OUTPUT JSON FORMAT:
     {{
-        "customer_friendly_description": "Compelling 1-2 paragraph description...",
+        "customer_friendly_description": "A detailed 3-4 paragraph persuasive and factual description...",
         "key_features": ["Customer-friendly rewrite of argument 1", "Customer-friendly rewrite of argument 2", ...],
         "internal_web_keywords": "comma-separated list of short keywords for internal website search (e.g., 'fridge, samsung, refrigerator, silver')",
         "seo": {{
@@ -191,19 +206,32 @@ def generate_bulk_pis_data(file_path, url_data):
         uploaded_file = genai.get_file(uploaded_file.name)
     
     web_context = ""
+    image_candidates_str = ""
     if url_data.get('text'):
-        web_context = f"WEBSITE TEXT CONTENT: {url_data['text']}\n\nWEBSITE HTML (For Image URLs): {url_data['html']}"
+        web_context = f"WEBSITE TEXT CONTENT: {url_data['text']}\n\nWEBSITE HTML (Partial): {url_data['html']}"
+        candidates = url_data.get('image_candidates', [])
+        image_candidates_str = "IMAGE CANDIDATES (Ranked by crawler):\n" + "\n".join([f"- {url}" for url in candidates])
 
     model = genai.GenerativeModel('models/gemini-flash-latest')
     
     prompt = f"""
-    You are an expert Product Data Specialist. 
+    You are an expert Product Data Specialist and Technical Researcher. 
     The uploaded document is a list of products (Invoice/Catalog).
     
     Task:
     1. Identify EVERY unique product model listed.
-    2. Use the Website Context to enrich data (Specs, Description).
-    3. **CRITICAL**: For each product, search the 'WEBSITE HTML' to find the matching **Image URL**.
+    2. FACTUAL ENRICHMENT: Use the Website Context to identify deep specs and detailed descriptions.
+    3. **STRICT ACCURACY**: Do NOT hallucinate or invent features. 
+    4. **INDEPENDENT DESCRIPTIONS**: 
+       - Each product must have its own standalone, unique, and comprehensive description. 
+       - **CRITICAL**: NEVER refer to other products in the list (e.g., AVOID "See Model X for more info" or "Refer to the overview of the cream version"). 
+       - Every 'range_overview' must be fully populated with its own unique text, even for simple color variations.
+    5. HERO IMAGE SELECTION:
+       - For each product, review the 'IMAGE CANDIDATES' list below.
+       - **CRITICAL**: Select the single URL that represents the **HERO SHOT** (main product image).
+       - AVOID diagrams, technical drawings, internal components, icons, or secondary thumbnails.
+    
+    {image_candidates_str}
     
     {web_context}
     
@@ -211,9 +239,9 @@ def generate_bulk_pis_data(file_path, url_data):
     [
         {{
             "header_info": {{ "product_name": "...", "model_number": "...", "brand": "...", "price_estimate": "..." }},
-            "found_image_url": "String (URL found in HTML, or null)",
-            "seo_data": {{ "generated_keywords": "...", "meta_title": "...", "meta_description": "...", "seo_long_description": "..." }},
-            "range_overview": "...",
+            "found_image_url": "String (Selected Hero Shot URL, or null)",
+            "seo_data": {{ "generated_keywords": "...", "meta_title": "...", "meta_description": "...", "seo_long_description": "2 paragraphs" }},
+            "range_overview": "A comprehensive 2-4 paragraph technical and marketing overview. Deep-dive into technology, build quality, and use cases as found in the research data.",
             "sales_arguments": ["..."],
             "technical_specifications": {{ "Spec": "Value" }},
             "warranty_service": {{ "period": "...", "coverage": "..." }}
