@@ -91,16 +91,19 @@ def dashboard_marketing():
     # 1. Fetch all products (needed for metrics calculation)
     all_products = Product.query.order_by(Product.created_at.desc()).all()
     
-    # 2. Filter for Active Pipeline (Not finalized)
-    active_pipeline = [p for p in all_products if p.workflow_stage != 'finalized']
+    # 2. Filter for Active Marketing Pipeline (Including PIS Approved)
+    approved_stages = ['ready_for_web', 'specsheet_draft', 'pending_director_spec', 'web_changes_requested', 'finalized']
+    marketing_stages = ['marketing_draft', 'marketing_in_progress', 'marketing_changes_requested', 'pending_director_pis'] + approved_stages
+    active_pipeline = [p for p in all_products if p.workflow_stage in marketing_stages]
     
     # 3. Calculate Real-Time Metrics
     metrics = {
         'total_active': len(active_pipeline),
-        'drafts': sum(1 for p in all_products if p.workflow_stage == 'marketing_draft'),
-        'changes': sum(1 for p in all_products if p.workflow_stage == 'marketing_changes_requested'),
-        'need_review': sum(1 for p in all_products if p.workflow_stage == 'pending_director_pis'),
-        'approved': sum(1 for p in all_products if p.workflow_stage in ['finalized', 'ready_for_web'])
+        'drafts': sum(1 for p in active_pipeline if p.workflow_stage == 'marketing_draft'),
+        'changes': sum(1 for p in active_pipeline if p.workflow_stage == 'marketing_changes_requested'),
+        'need_review': sum(1 for p in active_pipeline if p.workflow_stage == 'pending_director_pis'),
+        'in_process': sum(1 for p in active_pipeline if p.workflow_stage == 'marketing_in_progress'),
+        'approved': sum(1 for p in active_pipeline if p.workflow_stage in approved_stages)
     }
     
     return render_template('dashboard_marketing.html', 
@@ -306,7 +309,7 @@ def dashboard_web():
         "changes_requested": sum(1 for p in tasks if p.workflow_stage == "web_changes_requested"),
         "need_review": sum(1 for p in tasks if p.workflow_stage == "pending_director_spec"),
         "approved": sum(1 for p in tasks if p.workflow_stage == "finalized"),
-        "drafts": sum(1 for p in tasks if p.workflow_stage == "specsheet_draft"),
+        "in_process": sum(1 for p in tasks if p.workflow_stage == "specsheet_draft"),
     }
 
     # ---- RENDER DASHBOARD ----
@@ -579,6 +582,8 @@ def review_pis_marketing(product_id):
             log_event(product.id, 'Marketing Team', 'Submitted to Director', 'PIS draft submitted for review.', 'waiting')
             flash("Submitted to Director")
         else:
+            if product.workflow_stage == 'marketing_draft':
+                product.workflow_stage = 'marketing_in_progress'
             log_event(product.id, 'Marketing Team', 'Draft Updated', 'Marketing team saved changes.', 'neutral')
             flash("Saved ")
             
@@ -754,6 +759,9 @@ def create_specsheet(product_id):
         if request.form.get('action') == 'submit_director':
             product.workflow_stage = 'pending_director_spec'
             log_event(product.id, 'Web Team', 'Submitted SpecSheet', 'SpecSheet submitted to Director.', 'waiting')
+        else:
+            if product.workflow_stage == 'ready_for_web':
+                product.workflow_stage = 'specsheet_draft'
         
         # Save edits to spec data
         spec_data = product.spec_data or {}
@@ -893,6 +901,7 @@ def review_director_spec(product_id):
             comments_map = {
                 'seo_optimization': request.form.get('comment_seo_optimization'),
                 'internal_web_keywords': request.form.get('comment_internal_web_keywords'),
+                'product_classification': request.form.get('comment_product_classification'),
                 'header_info': request.form.get('comment_header_info'),
                 'range_overview': request.form.get('comment_range_overview'),
                 'sales_arguments': request.form.get('comment_sales_arguments'),
@@ -905,10 +914,12 @@ def review_director_spec(product_id):
             for section, comment in comments_map.items():
                 if comment and comment.strip():
                     # Get original content based on section
-                    if section in ['seo_optimization', 'internal_web_keywords']:
+                    if section in ['seo_optimization', 'internal_web_keywords', 'product_classification']:
                         # For SpecSheet specific fields
                         if section == 'seo_optimization':
                             original = product.spec_data.get('customer_friendly_description') if product.spec_data else ''
+                        elif section == 'product_classification':
+                            original = product.spec_data.get('categories') if product.spec_data else {}
                         else:
                             original = product.spec_data.get('internal_web_keywords') if product.spec_data else ''
                     else:
@@ -1083,6 +1094,9 @@ def retry_revision(product_id, section):
 
     # Update only the AI suggestion
     product.revision_data[section]["ai_suggestion"] = new_ai_suggestion
+    
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(product, 'revision_data')
 
     db.session.commit()
 

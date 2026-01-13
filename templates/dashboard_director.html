@@ -15,35 +15,59 @@
             image: `{{ url_for('static', filename=p.image_path) if p.image_path else '' }}`,
             date: `{{ p.created_at.strftime('%d %b') }}`,
             stage: `{{ p.workflow_stage }}`,
-            stage_display: `{{ p.workflow_stage.replace('_', ' ').title() }}`,
             pis_pdf_url: `{{ url_for('download_pis_pdf', product_id=p.id) }}`,
             spec_pdf_url: `{{ url_for('download_specsheet', product_id=p.id) }}`,
             
             {# --- Logic for UI Display --- #}
-            {% if 'pending_director_pis' in p.workflow_stage %}
-                action_url: `{{ url_for('review_director_pis', product_id=p.id) }}`,
-                action_label: 'Review PIS',
+            {% if 'pending_director' in p.workflow_stage %}
+                action_url: `{{ url_for('review_director_pis', product_id=p.id) if 'pis' in p.workflow_stage else url_for('review_director_spec', product_id=p.id) }}`,
+                action_label: `{{ 'Review PIS' if 'pis' in p.workflow_stage else 'Review Spec' }}`,
                 is_urgent: true,
                 status_bg: 'bg-blue-50',
                 status_text: 'text-blue-700',
-            {% elif 'pending_director_spec' in p.workflow_stage %}
-                action_url: `{{ url_for('review_director_spec', product_id=p.id) }}`,
-                action_label: 'Review Spec',
-                is_urgent: true,
-                status_bg: 'bg-purple-50',
-                status_text: 'text-purple-700',
-            {% elif 'finalized' in p.workflow_stage or 'ready_for_web' in p.workflow_stage %}
+                stage_display: 'Need Review',
+            {% elif 'finalized' in p.workflow_stage %}
                 action_url: `{{ url_for('review_director_pis', product_id=p.id) }}`,
                 action_label: 'View Details',
                 is_urgent: false,
                 status_bg: 'bg-green-50',
                 status_text: 'text-green-700',
-            {% else %}
+                stage_display: 'SpecSheet Approved',
+            {% elif 'ready_for_web' in p.workflow_stage or 'spec' in p.workflow_stage or 'web_changes' in p.workflow_stage %}
+                action_url: `{{ url_for('review_director_pis', product_id=p.id) }}`,
+                action_label: 'View Details',
+                is_urgent: false,
+                status_bg: 'bg-green-50',
+                status_text: 'text-green-700',
+                stage_display: 'PIS Approved',
+            {% elif p.workflow_stage == 'marketing_draft' %}
                 action_url: `{{ url_for('review_director_pis', product_id=p.id) }}`,
                 action_label: 'View Details',
                 is_urgent: false,
                 status_bg: 'bg-yellow-50',
                 status_text: 'text-yellow-700',
+                stage_display: 'Draft PIS',
+            {% elif p.workflow_stage == 'marketing_in_progress' %}
+                action_url: `{{ url_for('review_director_pis', product_id=p.id) }}`,
+                action_label: 'View Details',
+                is_urgent: false,
+                status_bg: 'bg-amber-50',
+                status_text: 'text-amber-700',
+                stage_display: 'In Process',
+            {% elif 'changes' in p.workflow_stage %}
+                action_url: `{{ url_for('review_director_pis', product_id=p.id) }}`,
+                action_label: 'View Details',
+                is_urgent: false,
+                status_bg: 'bg-red-50',
+                status_text: 'text-red-700',
+                stage_display: 'Change Requested',
+            {% else %}
+                action_url: `{{ url_for('review_director_pis', product_id=p.id) }}`,
+                action_label: 'View Details',
+                is_urgent: false,
+                status_bg: 'bg-gray-50',
+                status_text: 'text-gray-700',
+                stage_display: `{{ p.workflow_stage.replace('_', ' ').title() }}`,
             {% endif %}
         },
         {% endif %}
@@ -58,7 +82,8 @@
 
             if (this.filter === 'all') return true;
             if (this.filter === 'action') return p.stage.includes('pending_director');
-            if (this.filter === 'marketing') return p.stage.includes('marketing') || p.stage.includes('draft') || p.stage.includes('changes');
+            if (this.filter === 'marketing') return p.stage.includes('marketing_draft') || p.stage.includes('marketing_in_progress');
+            if (this.filter === 'changes') return p.stage.includes('changes');
             if (this.filter === 'approved') return p.stage === 'finalized' || p.stage === 'ready_for_web';
             return false;
         });
@@ -94,7 +119,7 @@
                 <div
                     class="px-4 py-2 bg-white/80 border border-gray-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                    {{ metrics.in_progress }} In Progress
+                    {{ metrics.in_progress }} In Process
                 </div>
                 <div
                     class="px-4 py-2 bg-white/80 border border-gray-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm flex items-center gap-2">
@@ -116,7 +141,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Total Products</p>
+                <p class="text-xs font-bold text-gray-400">Total Products</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.total_products }}</p>
             </div>
         </div>
@@ -131,8 +156,7 @@
                 </svg>
             </div>
             <div>
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-wide group-hover:text-red-500 transition-colors">
+                <p class="text-xs font-bold text-gray-400 group-hover:text-red-500 transition-colors">
                     Need Review</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.pending_reviews }}</p>
             </div>
@@ -148,9 +172,8 @@
                 </svg>
             </div>
             <div>
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-wide group-hover:text-blue-500 transition-colors">
-                    Active Drafts</p>
+                <p class="text-xs font-bold text-gray-400 group-hover:text-blue-500 transition-colors">
+                    In Process</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.in_progress }}</p>
             </div>
         </div>
@@ -165,8 +188,7 @@
                 </svg>
             </div>
             <div>
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-wide group-hover:text-green-500 transition-colors">
+                <p class="text-xs font-bold text-gray-400 group-hover:text-green-500 transition-colors">
                     Approved</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.finalized }}</p>
             </div>
@@ -210,7 +232,10 @@
                         class="px-4 py-1.5 rounded-md text-xs transition-all">Need Review</button>
                     <button @click="filter = 'marketing'"
                         :class="filter === 'marketing' ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Drafts</button>
+                        class="px-4 py-1.5 rounded-md text-xs transition-all">In Process</button>
+                    <button @click="filter = 'changes'"
+                        :class="filter === 'changes' ? 'bg-white text-red-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
+                        class="px-4 py-1.5 rounded-md text-xs transition-all">Change Requested</button>
                     <button @click="filter = 'approved'"
                         :class="filter === 'approved' ? 'bg-white text-green-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
                         class="px-4 py-1.5 rounded-md text-xs transition-all">Approved</button>
@@ -259,7 +284,7 @@
                                 </template>
 
                                 <!-- Status Badge Overlay -->
-                                <div class="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide backdrop-blur-md border border-white/50 shadow-sm"
+                                <div class="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold backdrop-blur-md border border-white/50 shadow-sm"
                                     :class="p.status_bg + ' ' + p.status_text" x-text="p.stage_display">
                                 </div>
                             </div>
@@ -330,8 +355,7 @@
                                     <td class="px-6 py-3" x-text="p.brand"></td>
                                     <td class="px-6 py-3 text-xs text-slate-400" x-text="p.date"></td>
                                     <td class="px-6 py-3">
-                                        <span
-                                            class="px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wide border border-transparent"
+                                        <span class="px-2.5 py-1 rounded text-xs font-bold border border-transparent"
                                             :class="p.status_bg + ' ' + p.status_text" x-text="p.stage_display"></span>
                                     </td>
                                     <td class="px-6 py-3 text-right pr-8">

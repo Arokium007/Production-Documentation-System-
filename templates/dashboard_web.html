@@ -8,7 +8,7 @@
 {% set changes_requested = tasks|selectattr('workflow_stage', 'equalto', 'web_changes_requested')|list|length %}
 {% set need_review = tasks|selectattr('workflow_stage', 'equalto', 'pending_director_spec')|list|length %}
 {% set approved = tasks|selectattr('workflow_stage', 'equalto', 'finalized')|list|length %}
-{% set drafts = tasks|selectattr('workflow_stage', 'equalto', 'specsheet_draft')|list|length %}
+{% set in_process = tasks|selectattr('workflow_stage', 'equalto', 'specsheet_draft')|list|length %}
 
 <div x-data="{ 
     filter: 'new', 
@@ -86,7 +86,7 @@
             {% if p.workflow_stage == 'ready_for_web' %}
                 status_bg: 'bg-green-100',
                 status_text: 'text-green-700',
-                stage_display: 'New SpecSheet',
+                stage_display: 'Draft SpecSheet',
                 action_label: 'Edit SpecSheet',
                 is_urgent: false,
                 is_modal_trigger: false,
@@ -98,15 +98,15 @@
                 is_urgent: true,
                 is_modal_trigger: false,
             {% elif p.workflow_stage == 'specsheet_draft' %}
-                status_bg: 'bg-blue-100',
-                status_text: 'text-blue-700',
-                stage_display: 'Draft',
+                status_bg: 'bg-amber-100',
+                status_text: 'text-amber-700',
+                stage_display: 'In Process',
                 action_label: 'Continue Editing',
                 is_urgent: false,
                 is_modal_trigger: false,
             {% elif p.workflow_stage == 'pending_director_spec' %}
-                status_bg: 'bg-amber-100',
-                status_text: 'text-amber-700',
+                status_bg: 'bg-blue-100',
+                status_text: 'text-blue-700',
                 stage_display: 'Need Review',
                 action_label: 'View',
                 is_urgent: false,
@@ -114,7 +114,7 @@
             {% elif p.workflow_stage == 'finalized' %}
                 status_bg: 'bg-indigo-100',
                 status_text: 'text-indigo-700',
-                stage_display: 'Approved',
+                stage_display: 'SpecSheet Approved',
                 action_label: 'View',
                 is_urgent: false,
                 is_modal_trigger: false,
@@ -142,7 +142,7 @@
             if (this.filter === 'changes' && p.stage === 'web_changes_requested') return true;
             if (this.filter === 'review' && p.stage === 'pending_director_spec') return true;
             if (this.filter === 'approved' && p.stage === 'finalized') return true;
-            if (this.filter === 'drafts' && p.stage === 'specsheet_draft') return true;
+            if (this.filter === 'in_process' && p.stage === 'specsheet_draft') return true;
             return false;
         });
     }
@@ -203,7 +203,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Total Tasks</p>
+                <p class="text-xs font-bold text-gray-400">Total Tasks</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ total_tasks }}</p>
             </div>
         </div>
@@ -218,9 +218,8 @@
                 </svg>
             </div>
             <div>
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-wide group-hover:text-green-500 transition-colors">
-                    New SpecSheet</p>
+                <p class="text-xs font-bold text-gray-400 group-hover:text-green-500 transition-colors">
+                    Draft SpecSheet</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ new_specsheets }}</p>
             </div>
         </div>
@@ -235,15 +234,30 @@
                 </svg>
             </div>
             <div>
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-wide group-hover:text-red-500 transition-colors">
+                <p class="text-xs font-bold text-gray-400 group-hover:text-red-500 transition-colors">
                     Change Requested</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ changes_requested }}</p>
             </div>
         </div>
 
-        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-amber-200 transition-colors group cursor-pointer"
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-blue-200 transition-colors group cursor-pointer"
             @click="filter = 'review'">
+            <div
+                class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-gray-400 group-hover:text-blue-500 transition-colors">
+                    Need Review</p>
+                <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ need_review }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-amber-200 transition-colors group cursor-pointer"
+            @click="filter = 'in_process'">
             <div
                 class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 flex-shrink-0 group-hover:bg-amber-100 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,10 +266,9 @@
                 </svg>
             </div>
             <div>
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-wide group-hover:text-amber-500 transition-colors">
-                    Need Review</p>
-                <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ need_review }}</p>
+                <p class="text-xs font-bold text-gray-400 group-hover:text-amber-500 transition-colors">
+                    In Process</p>
+                <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ in_process }}</p>
             </div>
         </div>
 
@@ -269,9 +282,8 @@
                 </svg>
             </div>
             <div>
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-wide group-hover:text-indigo-500 transition-colors">
-                    Approved</p>
+                <p class="text-xs font-bold text-gray-400 group-hover:text-indigo-500 transition-colors">
+                    SpecSheet Approved</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ approved }}</p>
             </div>
         </div>
@@ -308,22 +320,27 @@
                 <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
                     <button @click="filter = 'all'"
                         :class="filter === 'all' ? 'bg-white text-slate-800 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">All Tasks</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider">All</button>
                     <button @click="filter = 'new'"
                         :class="filter === 'new' ? 'bg-white text-green-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">New SpecSheet</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">Draft
+                        SpecSheet</button>
                     <button @click="filter = 'changes'"
                         :class="filter === 'changes' ? 'bg-white text-red-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Change Requested</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">Change
+                        Requested</button>
                     <button @click="filter = 'review'"
-                        :class="filter === 'review' ? 'bg-white text-amber-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Need Review</button>
+                        :class="filter === 'review' ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">Need
+                        Review</button>
+                    <button @click="filter = 'in_process'"
+                        :class="filter === 'in_process' ? 'bg-white text-amber-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">In
+                        Process</button>
                     <button @click="filter = 'approved'"
                         :class="filter === 'approved' ? 'bg-white text-indigo-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Approved</button>
-                    <button @click="filter = 'drafts'"
-                        :class="filter === 'drafts' ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Drafts</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">SpecSheet
+                        Approved</button>
                 </div>
             </div>
 
@@ -369,7 +386,7 @@
                                 </template>
 
                                 <!-- Status Badge Overlay -->
-                                <div class="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide backdrop-blur-md border border-white/50 shadow-sm"
+                                <div class="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold backdrop-blur-md border border-white/50 shadow-sm"
                                     :class="p.status_bg + ' ' + p.status_text" x-text="p.stage_display">
                                 </div>
                             </div>
@@ -457,8 +474,7 @@
                                     <td class="px-6 py-3" x-text="p.brand"></td>
                                     <td class="px-6 py-3 text-xs text-slate-400" x-text="p.date"></td>
                                     <td class="px-6 py-3">
-                                        <span
-                                            class="px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wide border border-transparent"
+                                        <span class="px-2.5 py-1 rounded text-xs font-bold border border-transparent"
                                             :class="p.status_bg + ' ' + p.status_text" x-text="p.stage_display"></span>
                                     </td>
                                     <td class="px-6 py-3 text-right pr-8">

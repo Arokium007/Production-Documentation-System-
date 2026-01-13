@@ -9,12 +9,35 @@
 
             <div class="px-8 py-4 flex items-center justify-between">
                 <div>
-                    <h2 class="text-xl font-semibold text-gray-900">Finalize SpecSheet</h2>
+                    <h2 class="text-xl font-semibold text-gray-900">Edit SpecSheet</h2>
                     <div class="flex items-center gap-2 text-xs text-gray-500 mt-1">
                         <span class="font-medium text-gray-900">{{ product.model_name }}</span>
                         <span>·</span>
-                        <span class="uppercase tracking-wide font-bold bg-gray-100 px-2 py-0.5 rounded text-gray-600">{{
-                            product.workflow_stage.replace('_',' ') }}</span>
+                        {% if product.workflow_stage == 'ready_for_web' %}
+                        <span
+                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-100">Draft
+                            SpecSheet</span>
+                        {% elif product.workflow_stage == 'specsheet_draft' %}
+                        <span
+                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100">In
+                            Process</span>
+                        {% elif product.workflow_stage == 'web_changes_requested' %}
+                        <span
+                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-700 border border-red-100">Change
+                            Requested</span>
+                        {% elif product.workflow_stage == 'pending_director_spec' %}
+                        <span
+                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">Need
+                            Review</span>
+                        {% elif product.workflow_stage == 'finalized' %}
+                        <span
+                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-100">SpecSheet
+                            Approved</span>
+                        {% else %}
+                        <span
+                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-50 text-gray-700 border border-gray-100">{{
+                            product.workflow_stage|replace('_', ' ') }}</span>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -60,8 +83,8 @@
                     <a href="#header"
                         class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Header</a>
                     <a href="#content"
-                        class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Web
-                        Content</a>
+                        class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Short
+                        Description</a>
                     <a href="#features"
                         class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Key
                         Features</a>
@@ -72,6 +95,8 @@
                     <a href="#tech_specs"
                         class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Technical
                         Specs</a>
+                    <a href="#warranty"
+                        class="nav-link px-4 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:text-gray-900 transition-all">Warranty</a>
                 </nav>
 
                 <div class="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden shadow-inner relative">
@@ -103,6 +128,39 @@
                             <p class="text-xs text-gray-500">Essential product details for the SpecSheet.</p>
                         </div>
                     </div>
+
+                    {% if product.revision_data and product.revision_data.get('header_info') %}
+                    <div id="rev-card-header"
+                        class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5 relative overflow-hidden animate-fade-in shadow-sm">
+                        <div
+                            class="flex items-center gap-2 mb-3 text-amber-800 font-bold text-xs uppercase tracking-wide">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Director Change Request
+                        </div>
+                        <div class="text-sm text-gray-800 mb-4 font-medium border-l-2 border-amber-300 pl-3">
+                            "{{ product.revision_data['header_info']['comment'] }}"
+                        </div>
+                        <div class="mb-4">
+                            <label class="text-[10px] uppercase font-bold text-green-600 mb-1 block">AI Suggestion
+                                (Editable JSON)</label>
+                            <textarea
+                                class="w-full p-3 rounded-lg border border-green-300 text-xs font-mono text-green-900 bg-white/50 resize-none focus:ring-2 focus:ring-green-200 focus:outline-none"
+                                rows="5">{{ product.revision_data['header_info']['ai_suggestion'] | tojson(indent=2) }}</textarea>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="acceptRevision(this)" data-section="header"
+                                class="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 shadow-sm transition-all">Accept</button>
+                            <button type="button" onclick="retryRevision(this)" data-section="header_info"
+                                data-id="{{ product.id }}"
+                                class="px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-100 border border-blue-100">Retry</button>
+                            <button type="button" onclick="this.closest('.animate-fade-in').remove()"
+                                class="px-4 py-2 bg-white border border-gray-300 text-gray-600 text-xs font-bold rounded-lg">Ignore</button>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -147,7 +205,7 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 class="font-bold text-gray-900 text-lg">Web Content</h3>
+                            <h3 class="font-bold text-gray-900 text-lg">Short Description</h3>
                             <p class="text-xs text-gray-500">Customer-facing description for the website/PDF.</p>
                         </div>
                     </div>
@@ -165,9 +223,11 @@
                         </p>
                     </div>
 
-                    {% if product.revision_data and product.revision_data.get('seo_optimization') %}
+                    {% set seo_rev = (product.revision_data.get('seo_optimization') or
+                    product.revision_data.get('range_overview')) if product.revision_data else None %}
+                    {% if seo_rev %}
                     <div id="rev-card-seo"
-                        class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5 relative overflow-hidden animate-fade-in">
+                        class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5 relative overflow-hidden animate-fade-in shadow-sm">
                         <div
                             class="flex items-center gap-2 mb-3 text-amber-800 font-bold text-xs uppercase tracking-wide">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,14 +237,14 @@
                             Director Change Request
                         </div>
                         <div class="text-sm text-gray-800 mb-4 font-medium border-l-2 border-amber-300 pl-3">
-                            "{{ product.revision_data['seo_optimization']['comment'] }}"
+                            "{{ seo_rev['comment'] }}"
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label class="text-[10px] uppercase font-bold text-gray-400 mb-1 block">Original</label>
                                 <div
                                     class="bg-white p-3 rounded-lg border border-gray-200 text-xs text-gray-400 line-through leading-relaxed max-h-32 overflow-y-auto">
-                                    {{ product.revision_data['seo_optimization']['original'] }}
+                                    {{ seo_rev['original'] }}
                                 </div>
                             </div>
                             <div>
@@ -192,13 +252,14 @@
                                     (Editable)</label>
                                 <textarea id="ai-edit-seo"
                                     class="w-full p-3 rounded-lg border border-green-300 text-xs text-green-900 leading-relaxed shadow-sm resize-none focus:ring-2 focus:ring-green-200 focus:outline-none"
-                                    rows="5">{{ product.revision_data['seo_optimization']['ai_suggestion'] }}</textarea>
+                                    rows="5">{{ seo_rev['ai_suggestion'] }}</textarea>
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <button type="button" onclick="acceptRevision(this)" data-section="seo"
                                 class="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg shadow-sm hover:bg-green-700 transition-colors">Accept</button>
-                            <button type="button" onclick="retryRevision(this)" data-section="seo_optimization"
+                            <button type="button" onclick="retryRevision(this)"
+                                data-section="{{ 'seo_optimization' if product.revision_data.get('seo_optimization') else 'range_overview' }}"
                                 data-id="{{ product.id }}"
                                 class="px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1 border border-blue-200">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,15 +268,15 @@
                                 </svg>
                                 Retry
                             </button>
-                            <button type="button" onclick="document.getElementById('rev-card-seo').remove()"
+                            <button type="button" onclick="this.closest('.animate-fade-in').remove()"
                                 class="px-4 py-2 bg-white border border-gray-300 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors">Ignore</button>
                         </div>
                     </div>
                     {% endif %}
 
                     <div>
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5 block">SHORT
-                            DESCRIPTION</label>
+                        <label class="text-xs font-bold text-gray-400 mb-1.5 block">Short
+                            Description</label>
                         <textarea id="input-seo" name="customer_friendly_description" rows="10"
                             class="textarea">{{ spec_data.customer_friendly_description }}</textarea>
                     </div>
@@ -261,7 +322,7 @@
                                 </svg>
                                 Retry
                             </button>
-                            <button type="button" onclick="document.getElementById('rev-card-features').remove()"
+                            <button type="button" onclick="this.closest('.animate-fade-in').remove()"
                                 class="px-4 py-2 bg-white border border-gray-300 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors">Ignore</button>
                         </div>
                     </div>
@@ -336,6 +397,36 @@
                                 class="textarea border-indigo-100 bg-indigo-50/20 focus:border-indigo-500"
                                 placeholder="e.g. fridge, samsung, kfc, refrigerator, silver">{{ spec_data.get('internal_web_keywords', '') }}</textarea>
                         </div>
+
+                        {% if product.revision_data and product.revision_data.get('internal_web_keywords') %}
+                        <div id="rev-card-keywords"
+                            class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-5 relative animate-fade-in shadow-sm">
+                            <div class="flex items-center gap-2 mb-3 text-amber-800 font-bold text-xs uppercase">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Keywords Revision
+                            </div>
+                            <div class="text-sm text-gray-800 mb-4 font-medium border-l-2 border-amber-300 pl-3">
+                                "{{ product.revision_data['internal_web_keywords']['comment'] }}"
+                            </div>
+                            <div class="mb-4">
+                                <textarea
+                                    class="w-full p-3 rounded-lg border border-green-300 text-xs text-green-900 bg-white/50 focus:outline-none"
+                                    rows="2">{{ product.revision_data['internal_web_keywords']['ai_suggestion'] }}</textarea>
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="acceptRevision(this)" data-section="internal_keywords"
+                                    class="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg">Accept</button>
+                                <button type="button" onclick="retryRevision(this)" data-section="internal_web_keywords"
+                                    data-id="{{ product.id }}"
+                                    class="px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg border border-blue-100">Retry</button>
+                                <button type="button" onclick="this.closest('.animate-fade-in').remove()"
+                                    class="px-4 py-2 bg-white border border-gray-300 text-gray-600 text-xs font-bold rounded-lg">Ignore</button>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </section>
 
@@ -354,9 +445,37 @@
                                 <p class="text-xs text-gray-500">For website navigation and SEO</p>
                             </div>
                         </div>
-                        {% if spec_data.get('categories') %}
-                        {% endif %}
                     </div>
+
+                    {% if product.revision_data and product.revision_data.get('product_classification') %}
+                    <div id="rev-card-classification"
+                        class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5 relative animate-fade-in shadow-sm">
+                        <div class="flex items-center gap-2 mb-3 text-amber-800 font-bold text-xs uppercase">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Classification Feedback
+                        </div>
+                        <div class="text-sm text-gray-800 mb-4 font-medium border-l-2 border-amber-300 pl-3">
+                            "{{ product.revision_data['product_classification']['comment'] }}"
+                        </div>
+                        <div class="mb-4">
+                            <textarea
+                                class="w-full p-3 rounded-lg border border-green-300 text-xs font-mono text-green-900 bg-white/50 resize-none"
+                                rows="4">{{ product.revision_data['product_classification']['ai_suggestion'] | tojson(indent=2) }}</textarea>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="acceptRevision(this)" data-section="classification"
+                                class="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg">Accept</button>
+                            <button type="button" onclick="retryRevision(this)" data-section="product_classification"
+                                data-id="{{ product.id }}"
+                                class="px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg">Retry</button>
+                            <button type="button" onclick="this.closest('.animate-fade-in').remove()"
+                                class="px-4 py-2 bg-white border border-gray-300 text-gray-600 text-xs font-bold rounded-lg">Ignore</button>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
@@ -401,6 +520,38 @@
                         </div>
                     </div>
 
+                    {% if product.revision_data and product.revision_data.get('technical_specifications') %}
+                    <div id="rev-card-specs"
+                        class="mb-6 mx-8 bg-amber-50 border border-amber-200 rounded-xl p-5 relative animate-fade-in shadow-sm">
+                        <div class="flex items-center gap-2 mb-3 text-amber-800 font-bold text-xs uppercase">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Specifications Feedback
+                        </div>
+                        <div class="text-sm text-gray-800 mb-4 font-medium border-l-2 border-amber-300 pl-3">
+                            "{{ product.revision_data['technical_specifications']['comment'] }}"
+                        </div>
+                        <div class="mb-4">
+                            <textarea
+                                class="w-full p-3 rounded-lg border border-green-300 text-xs font-mono text-green-900 bg-white/50 resize-none"
+                                rows="6">{{ product.revision_data['technical_specifications']['ai_suggestion'] | tojson(indent=2) }}</textarea>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="acceptRevision(this)" data-section="specs"
+                                class="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg">Accept
+                                Changes</button>
+                            <button type="button" onclick="retryRevision(this)" data-section="technical_specifications"
+                                data-id="{{ product.id }}"
+                                class="px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg">Retry
+                                AI</button>
+                            <button type="button" onclick="this.closest('.animate-fade-in').remove()"
+                                class="px-4 py-2 bg-white border border-gray-300 text-gray-600 text-xs font-bold rounded-lg">Ignore</button>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="space-y-3"
                         data-specs='{{ (spec_data.get("technical_specifications", product.pis_data.get("technical_specifications", {})) or {}) | tojson }}'
                         x-data="{ 
@@ -437,6 +588,68 @@
                         <!-- Hidden field to submit specs as JSON -->
                         <input type="hidden" name="technical_specifications"
                             :value="JSON.stringify(Object.fromEntries(specs.filter(s => s.key.trim()).map(s => [s.key.trim(), s.value])))">
+                    </div>
+                </section>
+
+                {# 5. WARRANTY (Editable) #}
+                <section id="warranty" class="section-card scroll-mt-40">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-lg">Warranty & Service</h3>
+                            <p class="text-xs text-gray-500">Warranty details for the product.</p>
+                        </div>
+                    </div>
+
+                    {% if product.revision_data and product.revision_data.get('warranty_service') %}
+                    <div id="rev-card-warranty"
+                        class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-5 relative animate-fade-in shadow-sm">
+                        <div class="flex items-center gap-2 mb-3 text-amber-800 font-bold text-xs uppercase">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Warranty Feedback
+                        </div>
+                        <div class="text-sm text-gray-800 mb-4 font-medium border-l-2 border-amber-300 pl-3">
+                            "{{ product.revision_data['warranty_service']['comment'] }}"
+                        </div>
+                        <div class="mb-4">
+                            <textarea
+                                class="w-full p-3 rounded-lg border border-green-300 text-xs font-mono text-green-900 bg-white/50 resize-none"
+                                rows="3">{{ product.revision_data['warranty_service']['ai_suggestion'] | tojson(indent=2) }}</textarea>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="acceptRevision(this)" data-section="warranty"
+                                class="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg">Accept</button>
+                            <button type="button" onclick="retryRevision(this)" data-section="warranty_service"
+                                data-id="{{ product.id }}"
+                                class="px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg">Retry
+                                AI</button>
+                            <button type="button" onclick="this.closest('.animate-fade-in').remove()"
+                                class="px-4 py-2 bg-white border border-gray-300 text-gray-600 text-xs font-bold rounded-lg">Ignore</button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 mb-1.5 block">Warranty Period</label>
+                            <input type="text" name="warranty_period"
+                                value="{{ spec_data.warranty.period if spec_data.warranty else product.pis_data.warranty_service.period }}"
+                                class="input" placeholder="e.g. 1 Year">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 mb-1.5 block">Warranty Coverage</label>
+                            <input type="text" name="warranty_coverage"
+                                value="{{ spec_data.warranty.coverage if spec_data.warranty else product.pis_data.warranty_service.coverage }}"
+                                class="input" placeholder="e.g. Parts & Labor">
+                        </div>
                     </div>
                 </section>
 
@@ -677,12 +890,19 @@
 </style>
 
 <script>
-    // --- Retry Logic (AJAX) ---
+    // --- Retry Logic (Generic) ---
     async function retryRevision(btn) {
         const section = btn.dataset.section;
         const productId = btn.dataset.id;
+        const cardId = btn.closest('.animate-fade-in').id;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '...';
+
+        btn.innerHTML = `
+            <svg class="animate-spin h-3 w-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        `;
         btn.disabled = true;
 
         try {
@@ -690,23 +910,21 @@
             const data = await response.json();
             if (data.error) throw new Error(data.error);
 
-            const newSuggestion = data.ai_suggestion;
+            const newSuggestion = data.suggestion;
+            const editArea = document.querySelector(`#${cardId} textarea`);
 
-            // Update Textareas directly
-            if (section === 'seo_optimization') {
-                document.getElementById('ai-edit-seo').value = newSuggestion;
-            } else if (section === 'sales_arguments') {
-                // Handle list formatting for textarea
-                let val = "";
-                if (Array.isArray(newSuggestion)) {
-                    val = newSuggestion.map(s => `• ${s}`).join('\n');
+            if (editArea) {
+                if (typeof newSuggestion === 'object' && !Array.isArray(newSuggestion)) {
+                    editArea.value = JSON.stringify(newSuggestion, null, 2);
+                } else if (Array.isArray(newSuggestion)) {
+                    editArea.value = newSuggestion.map(s => `• ${s}`).join('\n');
                 } else {
-                    val = `• ${newSuggestion}`;
+                    editArea.value = newSuggestion;
                 }
-                document.getElementById('ai-edit-features').value = val;
             }
         } catch (e) {
-            alert("Retry failed: " + e.message);
+            console.error("Retry failed:", e);
+            alert("Retry failed. Please try again.");
         } finally {
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -716,29 +934,74 @@
     // --- Accept Logic (Apply AI suggestion to main form) ---
     function acceptRevision(btn) {
         const section = btn.dataset.section;
+        const card = btn.closest('.animate-fade-in');
+        const textarea = card.querySelector('textarea');
+        const rawValue = textarea.value;
 
-        // 1. SEO/Customer Content: Simple value copy
-        if (section === 'seo') {
-            const value = document.getElementById('ai-edit-seo').value;
-            document.getElementById('input-seo').value = value;
-            document.getElementById('rev-card-seo').remove();
+        // 1. Header Information
+        if (section === 'header') {
+            try {
+                const data = JSON.parse(rawValue);
+                if (data.product_name) document.getElementsByName('product_name')[0].value = data.product_name;
+                if (data.model_number) document.getElementsByName('model_number')[0].value = data.model_number;
+                if (data.brand) document.getElementsByName('brand')[0].value = data.brand;
+                if (data.price_estimate) document.getElementsByName('price_estimate')[0].value = data.price_estimate;
+            } catch (e) { alert("Error applying header suggestion. Please check formatting."); }
         }
 
-        // 2. Features: Parse textarea and update Alpine.js data
+        // 2. SEO / Customer Content
+        else if (section === 'seo') {
+            document.getElementById('input-seo').value = rawValue;
+        }
+
+        // 3. Features (Alpine.js)
         else if (section === 'features') {
-            const value = document.getElementById('ai-edit-features').value
-                .split('\n')
-                .map(v => v.replace(/^[•\-\*]\s*/, '').trim()) // Strip bullet chars
-                .filter(Boolean); // removes empty lines
-
-            // Update Alpine.js reactive data
+            const list = rawValue.split('\n')
+                .map(v => v.replace(/^[•\-\*]\s*/, '').trim())
+                .filter(Boolean);
             const container = document.querySelector('#features-container');
-            if (container && container._x_dataStack && container._x_dataStack[0]) {
-                container._x_dataStack[0].features = value;
+            if (container && container._x_dataStack) {
+                container._x_dataStack[0].features = list;
             }
-
-            document.getElementById('rev-card-features').remove();
         }
+
+        // 4. Internal Keywords
+        else if (section === 'internal_keywords') {
+            document.getElementsByName('internal_web_keywords')[0].value = rawValue;
+        }
+
+        // 5. Classification
+        else if (section === 'classification') {
+            try {
+                const data = JSON.parse(rawValue);
+                if (data.category_1) document.getElementsByName('category_1')[0].value = data.category_1;
+                if (data.category_2) document.getElementsByName('category_2')[0].value = data.category_2;
+                if (data.category_3) document.getElementsByName('category_3')[0].value = data.category_3;
+            } catch (e) { alert("Error applying category suggestion."); }
+        }
+
+        // 6. Tech Specs (Alpine.js)
+        else if (section === 'specs') {
+            try {
+                const data = JSON.parse(rawValue);
+                const container = document.querySelector('#tech_specs [x-data]');
+                if (container && container._x_dataStack) {
+                    container._x_dataStack[0].specs = Object.entries(data).map(([k, v]) => ({ key: k, value: v }));
+                }
+            } catch (e) { alert("Error applying specs suggestion."); }
+        }
+
+        // 7. Warranty
+        else if (section === 'warranty') {
+            try {
+                const data = JSON.parse(rawValue);
+                if (data.period) document.getElementsByName('warranty_period')[0].value = data.period;
+                if (data.coverage) document.getElementsByName('warranty_coverage')[0].value = data.coverage;
+            } catch (e) { alert("Error applying warranty suggestion."); }
+        }
+
+        card.remove();
+        if (typeof performAutoSave === 'function') performAutoSave();
     }
 
     // --- Image Management Functions ---
