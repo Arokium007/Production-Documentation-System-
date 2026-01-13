@@ -119,7 +119,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400">Total</p>
+                <p class="text-xs font-bold text-gray-400">TOTAL</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.total_active }}</p>
             </div>
         </div>
@@ -134,7 +134,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400">Draft PIS</p>
+                <p class="text-xs font-bold text-gray-400">DRAFT PIS</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.drafts }}</p>
             </div>
         </div>
@@ -149,7 +149,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400">Change Requested</p>
+                <p class="text-xs font-bold text-gray-400">CHANGE REQUESTED</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.changes }}</p>
             </div>
         </div>
@@ -164,7 +164,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400">Need Review</p>
+                <p class="text-xs font-bold text-gray-400">NEED REVIEW</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.need_review }}</p>
             </div>
         </div>
@@ -179,7 +179,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400">In Process</p>
+                <p class="text-xs font-bold text-gray-400">IN PROCESS</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.in_process }}</p>
             </div>
         </div>
@@ -194,7 +194,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400">PIS Approved</p>
+                <p class="text-xs font-bold text-gray-400">PIS APPROVED</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.approved }}</p>
             </div>
         </div>
@@ -230,27 +230,27 @@
                 <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
                     <button @click="filter = 'all'"
                         :class="filter === 'all' ? 'bg-white text-slate-800 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap">All Items</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap uppercase">ALL</button>
                     <button @click="filter = 'draft'"
                         :class="filter === 'draft' ? 'bg-white text-yellow-600 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap">Draft
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap uppercase">DRAFT
                         PIS</button>
                     <button @click="filter = 'changes'"
                         :class="filter === 'changes' ? 'bg-white text-red-600 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap">Change
-                        Requested</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap uppercase">CHANGE
+                        REQUESTED</button>
                     <button @click="filter = 'review'"
                         :class="filter === 'review' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap">Need
-                        Review</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap uppercase">NEED
+                        REVIEW</button>
                     <button @click="filter = 'in_process'"
                         :class="filter === 'in_process' ? 'bg-white text-amber-600 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap">In
-                        Process</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap uppercase">IN
+                        PROCESS</button>
                     <button @click="filter = 'approved'"
                         :class="filter === 'approved' ? 'bg-white text-green-600 shadow-sm font-bold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap">PIS
-                        Approved</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all whitespace-nowrap uppercase">PIS
+                        APPROVED</button>
                 </div>
             </div>
 

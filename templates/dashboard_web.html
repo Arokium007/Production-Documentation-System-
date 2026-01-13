@@ -95,7 +95,6 @@
                 status_text: 'text-red-700',
                 stage_display: 'Change Requested',
                 action_label: 'Fix SpecSheet',
-                is_urgent: true,
                 is_modal_trigger: false,
             {% elif p.workflow_stage == 'specsheet_draft' %}
                 status_bg: 'bg-amber-100',
@@ -183,11 +182,7 @@
                     <span class="w-2 h-2 rounded-full bg-green-500"></span>
                     {{ new_specsheets }} New SpecSheets
                 </div>
-                <div
-                    class="px-4 py-2 bg-white/80 border border-gray-200 rounded-lg text-xs font-bold text-slate-600 shadow-sm flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                    {{ changes_requested }} Urgent
-                </div>
+
             </div>
         </div>
     </div>
@@ -203,7 +198,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400">Total Tasks</p>
+                <p class="text-xs font-bold text-gray-400">TOTAL TASKS</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ total_tasks }}</p>
             </div>
         </div>
@@ -219,7 +214,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 group-hover:text-green-500 transition-colors">
-                    Draft SpecSheet</p>
+                    DRAFT SPECSHEET</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ new_specsheets }}</p>
             </div>
         </div>
@@ -235,7 +230,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 group-hover:text-red-500 transition-colors">
-                    Change Requested</p>
+                    CHANGE REQUESTED</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ changes_requested }}</p>
             </div>
         </div>
@@ -251,7 +246,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 group-hover:text-blue-500 transition-colors">
-                    Need Review</p>
+                    NEED REVIEW</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ need_review }}</p>
             </div>
         </div>
@@ -267,7 +262,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 group-hover:text-amber-500 transition-colors">
-                    In Process</p>
+                    IN PROCESS</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ in_process }}</p>
             </div>
         </div>
@@ -283,7 +278,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 group-hover:text-indigo-500 transition-colors">
-                    SpecSheet Approved</p>
+                    SPECSHEET APPROVED</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ approved }}</p>
             </div>
         </div>
@@ -320,27 +315,27 @@
                 <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
                     <button @click="filter = 'all'"
                         :class="filter === 'all' ? 'bg-white text-slate-800 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider">All</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider">ALL</button>
                     <button @click="filter = 'new'"
                         :class="filter === 'new' ? 'bg-white text-green-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">Draft
-                        SpecSheet</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">DRAFT
+                        SPECSHEET</button>
                     <button @click="filter = 'changes'"
                         :class="filter === 'changes' ? 'bg-white text-red-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">Change
-                        Requested</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">CHANGE
+                        REQUESTED</button>
                     <button @click="filter = 'review'"
                         :class="filter === 'review' ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">Need
-                        Review</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">NEED
+                        REVIEW</button>
                     <button @click="filter = 'in_process'"
                         :class="filter === 'in_process' ? 'bg-white text-amber-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">In
-                        Process</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">IN
+                        PROCESS</button>
                     <button @click="filter = 'approved'"
                         :class="filter === 'approved' ? 'bg-white text-indigo-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">SpecSheet
-                        Approved</button>
+                        class="px-4 py-1.5 rounded-md text-[10px] transition-all uppercase tracking-wider whitespace-nowrap">SPECSHEET
+                        APPROVED</button>
                 </div>
             </div>
 
@@ -403,13 +398,9 @@
                             </div>
 
                             <!-- Action -->
-                            <!-- Logic: If it's a modal trigger, use @click. Else use href. -->
                             <template x-if="p.is_modal_trigger">
                                 <button @click="startGeneration(p.id)"
-                                    class="mt-3 w-full py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors border"
-                                    :class="p.is_urgent 
-                                       ? 'bg-red-600 text-white border-red-600 hover:bg-red-700 hover:shadow-lg shadow-red-200' 
-                                       : 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 hover:shadow-lg shadow-indigo-200'">
+                                    class="mt-3 w-full py-2 bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 hover:shadow-lg shadow-indigo-200 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors border">
                                     <span x-text="p.action_label"></span>
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -420,10 +411,7 @@
 
                             <template x-if="!p.is_modal_trigger">
                                 <a :href="p.action_url"
-                                    class="mt-3 w-full py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors border"
-                                    :class="p.is_urgent 
-                                       ? 'bg-red-600 text-white border-red-600 hover:bg-red-700 hover:shadow-lg shadow-red-200' 
-                                       : 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 hover:shadow-lg shadow-indigo-200'">
+                                    class="mt-3 w-full py-2 bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 hover:shadow-lg shadow-indigo-200 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors border">
                                     <span x-text="p.action_label"></span>
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -141,7 +141,7 @@
                 </svg>
             </div>
             <div>
-                <p class="text-xs font-bold text-gray-400">Total Products</p>
+                <p class="text-xs font-bold text-gray-400">TOTAL PRODUCTS</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.total_products }}</p>
             </div>
         </div>
@@ -157,7 +157,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 group-hover:text-red-500 transition-colors">
-                    Need Review</p>
+                    NEED REVIEW</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.pending_reviews }}</p>
             </div>
         </div>
@@ -173,7 +173,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 group-hover:text-blue-500 transition-colors">
-                    In Process</p>
+                    IN PROCESS</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.in_progress }}</p>
             </div>
         </div>
@@ -189,7 +189,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 group-hover:text-green-500 transition-colors">
-                    Approved</p>
+                    APPROVED</p>
                 <p class="text-xl font-bold text-slate-800 leading-none mt-0.5">{{ metrics.finalized }}</p>
             </div>
         </div>
@@ -226,19 +226,19 @@
                 <div class="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-100">
                     <button @click="filter = 'all'"
                         :class="filter === 'all' ? 'bg-white text-slate-800 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">All Files</button>
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase">ALL</button>
                     <button @click="filter = 'action'"
                         :class="filter === 'action' ? 'bg-white text-red-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Need Review</button>
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase">NEED REVIEW</button>
                     <button @click="filter = 'marketing'"
                         :class="filter === 'marketing' ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">In Process</button>
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase">IN PROCESS</button>
                     <button @click="filter = 'changes'"
                         :class="filter === 'changes' ? 'bg-white text-red-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Change Requested</button>
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase">CHANGE REQUESTED</button>
                     <button @click="filter = 'approved'"
                         :class="filter === 'approved' ? 'bg-white text-green-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-slate-600'"
-                        class="px-4 py-1.5 rounded-md text-xs transition-all">Approved</button>
+                        class="px-4 py-1.5 rounded-md text-xs transition-all uppercase">APPROVED</button>
                 </div>
             </div>
 
