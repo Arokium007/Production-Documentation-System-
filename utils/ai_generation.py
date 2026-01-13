@@ -295,6 +295,8 @@ def generate_ai_revision(section_name, original_content, director_comment):
     - If section is "technical_specifications", output MUST be a JSON object.
     - If section is "header_info", keep keys:
       product_name, model_number, brand, price_estimate
+    - If section is "seo_optimization", output MUST be a JSON object with keys:
+      meta_title, meta_description, keywords, refined_description
     """
 
     try:

@@ -917,7 +917,10 @@ def review_director_spec(product_id):
                     if section in ['seo_optimization', 'internal_web_keywords', 'product_classification']:
                         # For SpecSheet specific fields
                         if section == 'seo_optimization':
-                            original = product.spec_data.get('customer_friendly_description') if product.spec_data else ''
+                            original = product.spec_data.get('seo') if product.spec_data else {}
+                            # Include the description as well if available
+                            if product.spec_data and 'customer_friendly_description' in product.spec_data:
+                                original['refined_description'] = product.spec_data['customer_friendly_description']
                         elif section == 'product_classification':
                             original = product.spec_data.get('categories') if product.spec_data else {}
                         else:
