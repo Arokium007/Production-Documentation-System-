@@ -8,6 +8,7 @@ import time
 import re
 import google.generativeai as genai
 from .category_classifier import classify_product_category
+from .json_utils import safe_json_loads
 
 
 def generate_pis_data(file_path, model_name, url_data):
@@ -74,7 +75,7 @@ def generate_pis_data(file_path, model_name, url_data):
         [prompt, uploaded_file], 
         generation_config={"response_mime_type": "application/json"}
     )
-    return json.loads(response.text)
+    return safe_json_loads(response.text, fallback={})
 
 
 def generate_comprehensive_spec_data(pis_data):
@@ -126,7 +127,10 @@ def generate_comprehensive_spec_data(pis_data):
     """
     try:
         response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
-        spec_data = json.loads(response.text)
+        spec_data = safe_json_loads(response.text, fallback={})
+        
+        # Ensure we have a dict if fallback was used
+        if not isinstance(spec_data, dict): spec_data = {}
         
         # MANDATORY SAFETY NET: Enforce fallback if AI failed
         if (
@@ -253,7 +257,7 @@ def generate_bulk_pis_data(file_path, url_data):
         [prompt, uploaded_file], 
         generation_config={"response_mime_type": "application/json"}
     )
-    return json.loads(response.text)
+    return safe_json_loads(response.text, fallback=[])
 
 
 def generate_specsheet_optimization(product_data):
@@ -268,7 +272,7 @@ def generate_specsheet_optimization(product_data):
     """
     try:
         response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
-        return json.loads(response.text)
+        return safe_json_loads(response.text, fallback={})
     except:
         return {}
 

@@ -12,6 +12,7 @@ import shutil
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 import google.generativeai as genai
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def extract_domain(url):
@@ -304,6 +305,7 @@ def find_best_images(model_name: str, supplier_url: str | None = None) -> list[s
 def find_and_validate_image(model_name: str, supplier_url: str | None = None) -> str | None:
     """
     Finds and validates the best product image using a batch selection strategy.
+    Optimized with parallel downloading and domain short-circuiting.
     """
     image_candidates = find_best_images(model_name, supplier_url)
     
@@ -311,22 +313,33 @@ def find_and_validate_image(model_name: str, supplier_url: str | None = None) ->
         print("🚫 No image candidates found")
         return None
 
-    print(f"🔄 Evaluating {len(image_candidates)} candidate images in batch")
+    # Limit batch size to 5 to save memory and time
+    max_batch = 5
+    candidates_to_eval = image_candidates[:max_batch]
     
-    downloaded_bytes = []
-    downloaded_urls = []
+    print(f"🔄 Evaluating {len(candidates_to_eval)} candidate images in parallel")
     
-    # Download a batch of candidates (up to 8) for simultaneous AI evaluation
-    for i, image_url in enumerate(image_candidates[:8]):
-        print(f"--- Downloading candidate {i+1}: {image_url} ---")
-        image_bytes = download_image_bytes(image_url)
-        if image_bytes:
-            downloaded_bytes.append(image_bytes)
-            downloaded_urls.append(image_url)
+    downloaded_data = [None] * len(candidates_to_eval)
     
-    if not downloaded_bytes:
+    # Use parallel downloading to prevent timeouts
+    with ThreadPoolExecutor(max_workers=max_batch) as executor:
+        future_to_url = {executor.submit(download_image_bytes, url): i for i, url in enumerate(candidates_to_eval)}
+        for future in as_completed(future_to_url, timeout=25): # Hard timeout for all downloads
+            idx = future_to_url[future]
+            try:
+                downloaded_data[idx] = future.result()
+            except Exception as e:
+                print(f"Parallel download error for candidate {idx+1}: {e}")
+
+    # Zip URLs with their successfully downloaded bytes
+    valid_pairs = [(candidates_to_eval[i], downloaded_data[i]) for i in range(len(candidates_to_eval)) if downloaded_data[i]]
+    
+    if not valid_pairs:
         print("🚫 No images could be downloaded for evaluation")
         return None
+    
+    downloaded_urls = [p[0] for p in valid_pairs]
+    downloaded_bytes = [p[1] for p in valid_pairs]
         
     print(f"🧠 Sending {len(downloaded_bytes)} candidates to AI for ranking...")
     best_index = ai_select_best_image(downloaded_bytes, model_name)

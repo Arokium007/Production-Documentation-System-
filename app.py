@@ -396,6 +396,9 @@ def create_pis():
                     yield json.dumps({"progress": 70, "message": "Downloading Image..."}) + "\n"
                     extracted_image_path = download_web_image(public_url, model_name, app.config['UPLOAD_FOLDER'])
 
+                # Heartbeat before potential PDF scan
+                yield " " + "\n"
+
                 # --- UPDATED Fallback: PDF Scan based on Toggle ---
                 if not extracted_image_path and ai_filepath and contains_images:
                     yield json.dumps({"progress": 80, "message": "Google failed. Scanning PDF..."}) + "\n"
@@ -509,8 +512,10 @@ def create_bulk():
                         }) + "\n"
 
                         # Primary Search: Google
+                        yield " " + "\n" # Heartbeat
                         image_url = find_and_validate_image(search_query, supplier_url)
 
+                        yield " " + "\n" # Heartbeat
                         extracted_image_path = None
                         if image_url:
                             extracted_image_path = download_web_image(image_url, display_name, app.config['UPLOAD_FOLDER'])
