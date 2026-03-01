@@ -59,7 +59,7 @@ from utils.ai_generation import (
     generate_specsheet_optimization,
     generate_ai_revision
 )
-from utils.pdf_processing import extract_specific_image
+from utils.pdf_processing import extract_specific_image, clear_pdf_cache
 from utils.history import log_event
 
 
@@ -635,6 +635,9 @@ def create_bulk():
                             }) + "\n"
 
                 yield json.dumps({"progress": 100, "message": "Bulk Import Complete!", "redirect": url_for('dashboard_marketing')}) + "\n"
+                
+                # Free cached PDF images from memory
+                clear_pdf_cache()
             
             except Exception as e:
                 yield json.dumps({"error": str(e)}) + "\n"

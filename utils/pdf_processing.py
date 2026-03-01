@@ -14,11 +14,22 @@ from werkzeug.utils import secure_filename
 import google.generativeai as genai
 
 
+# ===== EMBEDDED IMAGE CACHE =====
+# Avoids re-scanning the same PDF for every product in bulk uploads
+_embedded_cache = {}  # {pdf_path: [candidate_images]}
+
+def clear_pdf_cache():
+    """Call after a bulk upload finishes to free memory."""
+    global _embedded_cache
+    _embedded_cache.clear()
+    print("🧹 PDF image cache cleared")
+
+
 def extract_specific_image(pdf_path, target_model, upload_folder):
     """
     Extracts a product image from a PDF using a multi-pass approach:
     
-    Pass 1: Try to extract embedded images directly (high quality, no AI needed)
+    Pass 1: Try to extract embedded images directly (uses cache for bulk)
     Pass 2: AI-powered screenshot scanning with high-res page renders
     
     Returns the path to the saved image, or None if not found.
@@ -28,8 +39,7 @@ def extract_specific_image(pdf_path, target_model, upload_folder):
     
     print(f"🔍 PDF Image Extraction starting for: '{target_model}'")
     
-    # ============ PASS 1: Extract Embedded Images ============
-    # Try to get actual embedded images from the PDF first — they're higher quality
+    # ============ PASS 1: Extract Embedded Images (CACHED) ============
     result = _extract_embedded_images(pdf_path, target_model, upload_folder)
     if result:
         print(f"✅ Pass 1 SUCCESS: Found embedded image for '{target_model}'")
@@ -50,70 +60,76 @@ def extract_specific_image(pdf_path, target_model, upload_folder):
 def _extract_embedded_images(pdf_path, target_model, upload_folder):
     """
     Pass 1: Extract actual embedded images from the PDF.
-    Filters by minimum size and uses AI to pick the best product image.
+    Uses cache to avoid re-scanning the same PDF in bulk uploads.
     """
+    global _embedded_cache
+    
     try:
-        doc = fitz.open(pdf_path)
-        candidate_images = []
-        
-        # Scan up to 10 pages for embedded images
-        for page_num in range(min(10, len(doc))):
-            page = doc[page_num]
-            image_list = page.get_images(full=True)
+        # Check cache first — avoid re-scanning for every product
+        if pdf_path in _embedded_cache:
+            candidate_images = _embedded_cache[pdf_path]
+            print(f"  📦 Using cached {len(candidate_images)} embedded images (skipping PDF scan)")
+        else:
+            # First time — scan the PDF and cache results
+            doc = fitz.open(pdf_path)
+            candidate_images = []
             
-            for img_index, img_info in enumerate(image_list):
-                xref = img_info[0]
-                try:
-                    base_image = doc.extract_image(xref)
-                    if not base_image:
-                        continue
-                    
-                    image_bytes = base_image["image"]
-                    img_ext = base_image.get("ext", "png")
-                    
-                    # Skip tiny images (logos, icons, decorations)
-                    pil_img = Image.open(io.BytesIO(image_bytes))
-                    w, h = pil_img.size
-                    
-                    if w < 150 or h < 150:
-                        continue
-                    
-                    # Skip images that are mostly one color (solid backgrounds, separators)
-                    if _is_mostly_solid(pil_img):
-                        continue
-                    
-                    print(f"  📎 Embedded image found: {w}x{h} ({len(image_bytes)} bytes) on page {page_num+1}")
-                    candidate_images.append({
-                        'bytes': image_bytes,
-                        'width': w,
-                        'height': h,
-                        'page': page_num,
-                        'ext': img_ext
-                    })
-                    
-                    # Cap at 8 candidates to avoid overwhelming AI
-                    if len(candidate_images) >= 8:
-                        break
+            for page_num in range(min(10, len(doc))):
+                page = doc[page_num]
+                image_list = page.get_images(full=True)
+                
+                for img_index, img_info in enumerate(image_list):
+                    xref = img_info[0]
+                    try:
+                        base_image = doc.extract_image(xref)
+                        if not base_image:
+                            continue
                         
-                except Exception as e:
-                    print(f"  ⚠ Could not extract image xref {xref}: {e}")
-                    continue
+                        image_bytes = base_image["image"]
+                        img_ext = base_image.get("ext", "png")
+                        
+                        pil_img = Image.open(io.BytesIO(image_bytes))
+                        w, h = pil_img.size
+                        
+                        if w < 150 or h < 150:
+                            continue
+                        
+                        if _is_mostly_solid(pil_img):
+                            continue
+                        
+                        print(f"  📎 Embedded image found: {w}x{h} ({len(image_bytes)} bytes) on page {page_num+1}")
+                        candidate_images.append({
+                            'bytes': image_bytes,
+                            'width': w,
+                            'height': h,
+                            'page': page_num,
+                            'ext': img_ext
+                        })
+                        
+                        if len(candidate_images) >= 12:
+                            break
+                            
+                    except Exception as e:
+                        print(f"  ⚠ Could not extract image xref {xref}: {e}")
+                        continue
+                
+                if len(candidate_images) >= 12:
+                    break
             
-            if len(candidate_images) >= 8:
-                break
-        
-        doc.close()
+            doc.close()
+            
+            # Cache for subsequent products
+            _embedded_cache[pdf_path] = candidate_images
+            print(f"  📦 Cached {len(candidate_images)} embedded images for reuse")
         
         if not candidate_images:
             return None
         
-        print(f"  📦 Found {len(candidate_images)} embedded image candidates, sending to AI...")
-        
-        # If only one candidate and it's large enough, use it directly
+        # If only one candidate, use it directly
         if len(candidate_images) == 1 and candidate_images[0]['width'] >= 200:
             return _save_candidate_image(candidate_images[0], target_model, upload_folder)
         
-        # Use AI to pick the best product image
+        # Use AI to pick the image matching this specific product
         return _ai_pick_best_from_candidates(candidate_images, target_model, upload_folder)
         
     except Exception as e:
