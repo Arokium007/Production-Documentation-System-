@@ -368,51 +368,73 @@ def create_pis():
                 ai_data = generate_pis_data(ai_filepaths, model_name, site_data)
                 
                 extracted_image_path = None
-                
-                # --- PRIORITY 1: Use AI's found_image_url (from PIS generation) ---
-                ai_found_url = ai_data.get('found_image_url')
-                if ai_found_url and ai_found_url.startswith('http'):
-                    yield json.dumps({"progress": 55, "message": "AI found a product image — downloading..."}) + "\n"
-                    extracted_image_path = download_web_image(ai_found_url, model_name, app.config['UPLOAD_FOLDER'])
-                
-                # --- PRIORITY 2: Google Image Search ---
-                if not extracted_image_path:
-                    yield json.dumps({"progress": 60, "message": "Searching Google Images..."}) + "\n"
-                    
-                    header = ai_data.get('header_info', {})
-                    brand = header.get('brand', '')
-                    m_num = header.get('model_number', '')
-                    p_name = header.get('product_name', '')
-                    
-                    q_parts = []
-                    if brand: q_parts.append(brand)
-                    if p_name: q_parts.append(p_name)
-                    
-                    if m_num and (any(c.isalpha() for c in m_num) or '-' in m_num):
-                        if m_num not in (p_name or ''):
-                            q_parts.append(m_num)
-                            
-                    full_str = " ".join(q_parts)
-                    unique_words = []
-                    [unique_words.append(x) for x in full_str.split() if x.lower() not in [y.lower() for y in unique_words]]
-                    rich_query = " ".join(unique_words)
-                    
-                    if not rich_query: rich_query = model_name
 
+                # When toggle is ON: PDF first, then web fallback
+                # When toggle is OFF: Web first (AI url → Google)
+                if contains_images and ai_filepaths:
+                    # --- PDF FIRST: User says images are in the document ---
+                    yield json.dumps({"progress": 55, "message": "Scanning PDF for product image..."}) + "\n"
                     yield " " + "\n"  # Heartbeat
-                    public_url = find_and_validate_image(rich_query, supplier_url)
-
-                    if public_url:
-                        yield json.dumps({"progress": 70, "message": "Downloading Image..."}) + "\n"
-                        extracted_image_path = download_web_image(public_url, model_name, app.config['UPLOAD_FOLDER'])
-
-                # Heartbeat before potential PDF scan
-                yield " " + "\n"
-
-                # --- PRIORITY 3: PDF Scan Fallback ---
-                if not extracted_image_path and ai_filepaths and contains_images:
-                    yield json.dumps({"progress": 80, "message": "Scanning PDF for product image..."}) + "\n"
                     extracted_image_path = extract_specific_image(ai_filepaths[0], model_name, app.config['UPLOAD_FOLDER'])
+                    yield " " + "\n"  # Heartbeat
+
+                    # Fallback to web if PDF scan found nothing
+                    if not extracted_image_path:
+                        yield json.dumps({"progress": 65, "message": "PDF scan found nothing, trying web..."}) + "\n"
+                        ai_found_url = ai_data.get('found_image_url')
+                        if ai_found_url and ai_found_url.startswith('http'):
+                            extracted_image_path = download_web_image(ai_found_url, model_name, app.config['UPLOAD_FOLDER'])
+
+                    if not extracted_image_path:
+                        header = ai_data.get('header_info', {})
+                        brand = header.get('brand', '')
+                        m_num = header.get('model_number', '')
+                        p_name = header.get('product_name', '')
+                        q_parts = []
+                        if brand: q_parts.append(brand)
+                        if p_name: q_parts.append(p_name)
+                        if m_num and (any(c.isalpha() for c in m_num) or '-' in m_num):
+                            if m_num not in (p_name or ''):
+                                q_parts.append(m_num)
+                        full_str = " ".join(q_parts)
+                        unique_words = []
+                        [unique_words.append(x) for x in full_str.split() if x.lower() not in [y.lower() for y in unique_words]]
+                        rich_query = " ".join(unique_words) if q_parts else model_name
+                        yield " " + "\n"
+                        public_url = find_and_validate_image(rich_query, supplier_url)
+                        if public_url:
+                            extracted_image_path = download_web_image(public_url, model_name, app.config['UPLOAD_FOLDER'])
+
+                else:
+                    # --- WEB FIRST: No toggle, use online search ---
+                    ai_found_url = ai_data.get('found_image_url')
+                    if ai_found_url and ai_found_url.startswith('http'):
+                        yield json.dumps({"progress": 55, "message": "AI found a product image — downloading..."}) + "\n"
+                        extracted_image_path = download_web_image(ai_found_url, model_name, app.config['UPLOAD_FOLDER'])
+
+                    if not extracted_image_path:
+                        yield json.dumps({"progress": 60, "message": "Searching Google Images..."}) + "\n"
+                        header = ai_data.get('header_info', {})
+                        brand = header.get('brand', '')
+                        m_num = header.get('model_number', '')
+                        p_name = header.get('product_name', '')
+                        q_parts = []
+                        if brand: q_parts.append(brand)
+                        if p_name: q_parts.append(p_name)
+                        if m_num and (any(c.isalpha() for c in m_num) or '-' in m_num):
+                            if m_num not in (p_name or ''):
+                                q_parts.append(m_num)
+                        full_str = " ".join(q_parts)
+                        unique_words = []
+                        [unique_words.append(x) for x in full_str.split() if x.lower() not in [y.lower() for y in unique_words]]
+                        rich_query = " ".join(unique_words) if q_parts else model_name
+                        yield " " + "\n"
+                        public_url = find_and_validate_image(rich_query, supplier_url)
+                        if public_url:
+                            yield json.dumps({"progress": 70, "message": "Downloading Image..."}) + "\n"
+                            extracted_image_path = download_web_image(public_url, model_name, app.config['UPLOAD_FOLDER'])
+
+                yield " " + "\n"  # Heartbeat
 
                 if extracted_image_path:
                     yield json.dumps({"progress": 90, "message": "Visual Acquired."}) + "\n"
@@ -525,29 +547,46 @@ def create_bulk():
                             
                             extracted_image_path = None
 
-                            # --- PRIORITY 1: Use AI's found_image_url ---
-                            ai_found_url = p_data.get('found_image_url')
-                            if ai_found_url and str(ai_found_url).startswith('http'):
-                                yield " " + "\n"  # Heartbeat
-                                extracted_image_path = download_web_image(ai_found_url, display_name, app.config['UPLOAD_FOLDER'])
-                                yield " " + "\n"  # Heartbeat
-
-                            # --- PRIORITY 2: Google Image Search ---
-                            if not extracted_image_path:
-                                yield " " + "\n"  # Heartbeat before search
-                                image_url = find_and_validate_image(search_query, supplier_url)
-                                yield " " + "\n"  # Heartbeat after search
-
-                                if image_url:
-                                    yield " " + "\n"  # Heartbeat before download
-                                    extracted_image_path = download_web_image(image_url, display_name, app.config['UPLOAD_FOLDER'])
-                                    yield " " + "\n"  # Heartbeat after download
-
-                            # --- PRIORITY 3: PDF Scan Fallback ---
-                            if not extracted_image_path and contains_images:
-                                yield " " + "\n"  # Heartbeat before PDF scan
+                            # When toggle is ON: PDF first, then web fallback
+                            # When toggle is OFF: Web first (AI url → Google)
+                            if contains_images:
+                                # --- PDF FIRST ---
+                                yield " " + "\n"
                                 extracted_image_path = extract_specific_image(ai_filepath, model_id, app.config['UPLOAD_FOLDER'])
-                                yield " " + "\n"  # Heartbeat after PDF scan
+                                yield " " + "\n"
+
+                                # Fallback to web if PDF found nothing
+                                if not extracted_image_path:
+                                    ai_found_url = p_data.get('found_image_url')
+                                    if ai_found_url and str(ai_found_url).startswith('http'):
+                                        yield " " + "\n"
+                                        extracted_image_path = download_web_image(ai_found_url, display_name, app.config['UPLOAD_FOLDER'])
+                                        yield " " + "\n"
+
+                                if not extracted_image_path:
+                                    yield " " + "\n"
+                                    image_url = find_and_validate_image(search_query, supplier_url)
+                                    yield " " + "\n"
+                                    if image_url:
+                                        yield " " + "\n"
+                                        extracted_image_path = download_web_image(image_url, display_name, app.config['UPLOAD_FOLDER'])
+                                        yield " " + "\n"
+                            else:
+                                # --- WEB FIRST ---
+                                ai_found_url = p_data.get('found_image_url')
+                                if ai_found_url and str(ai_found_url).startswith('http'):
+                                    yield " " + "\n"
+                                    extracted_image_path = download_web_image(ai_found_url, display_name, app.config['UPLOAD_FOLDER'])
+                                    yield " " + "\n"
+
+                                if not extracted_image_path:
+                                    yield " " + "\n"
+                                    image_url = find_and_validate_image(search_query, supplier_url)
+                                    yield " " + "\n"
+                                    if image_url:
+                                        yield " " + "\n"
+                                        extracted_image_path = download_web_image(image_url, display_name, app.config['UPLOAD_FOLDER'])
+                                        yield " " + "\n"
 
                             new_product = Product(
                                 model_name=display_name,
