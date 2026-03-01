@@ -5,14 +5,16 @@ Handles image search, validation, and downloading
 
 import os
 import re
+import io
 import json
 import time
 import requests
 import shutil
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from werkzeug.utils import secure_filename
 import google.generativeai as genai
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from PIL import Image
 
 
 def extract_domain(url):
@@ -36,7 +38,7 @@ def search_google_api(query: str, domain: str | None = None) -> list[str]:
         "cx": cx,
         "key": api_key,
         "searchType": "image",
-        "num": 10,  # Fetch up to 10 results
+        "num": 10,
         "imgSize": "large",
         "safe": "active",
     }
@@ -87,6 +89,21 @@ def clean_search_query(query: str) -> str:
     return cleaned
 
 
+# ==================== BAD DOMAIN FILTER ====================
+# These domains serve placeholder/generic images, not real product photos
+BAD_IMAGE_DOMAINS = {
+    'placeholder.com', 'via.placeholder.com', 'placehold.it',
+    'dummyimage.com', 'picsum.photos', 'lorempixel.com',
+    'fakeimg.pl', 'placekitten.com',
+}
+
+def is_bad_image_url(url: str) -> bool:
+    """Filter out known bad image sources."""
+    try:
+        domain = urlparse(url).netloc.replace("www.", "").lower()
+        return domain in BAD_IMAGE_DOMAINS
+    except:
+        return False
 
 
 def ai_validate_image(image_bytes: bytes, product_name: str) -> bool:
@@ -118,8 +135,7 @@ Respond ONLY with JSON:
 """
 
     try:
-        # Check image size/type before sending to AI
-        if len(image_bytes) > 20 * 1024 * 1024: # 20MB limit
+        if len(image_bytes) > 20 * 1024 * 1024:
             print("❌ Image too large for validation")
             return False
 
@@ -184,16 +200,20 @@ def ai_select_best_image(image_list: list[bytes], product_name: str) -> int | No
         if best == "none" or best is None:
             return None
         
-        return int(best) - 1 # Convert 1-based to 0-based
+        return int(best) - 1  # Convert 1-based to 0-based
     except Exception as e:
         print(f"Batch AI Image Selection failed: {e}")
         return None
 
 
-
-
 def download_image_bytes(image_url: str) -> bytes | None:
+    """Downloads image bytes with quality validation."""
     try:
+        # Skip known bad domains
+        if is_bad_image_url(image_url):
+            print(f"⚠ Skipping bad domain: {image_url}")
+            return None
+
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
@@ -201,14 +221,37 @@ def download_image_bytes(image_url: str) -> bytes | None:
         resp = requests.get(image_url, headers=headers, timeout=10, stream=True)
         if resp.status_code == 200:
             content_type = resp.headers.get('Content-Type', '')
-            content_length = resp.headers.get('Content-Length', 'unknown')
+            content_length = int(resp.headers.get('Content-Length', 0) or 0)
             
             if 'image' not in content_type:
                 print(f"⚠ Skipping non-image content type: {content_type}")
                 return None
             
-            print(f"--- Downloaded {content_length} bytes (Type: {content_type}) ---")
-            return resp.content
+            # Reject tiny images (likely icons/spacers) by Content-Length header
+            if content_length > 0 and content_length < 10_000:  # < 10KB
+                print(f"⚠ Skipping tiny image ({content_length} bytes): {image_url}")
+                return None
+            
+            image_data = resp.content
+            
+            # Reject by actual size if Content-Length wasn't available
+            if len(image_data) < 10_000:
+                print(f"⚠ Skipping tiny image ({len(image_data)} bytes): {image_url}")
+                return None
+            
+            # Verify image dimensions using PIL
+            try:
+                img = Image.open(io.BytesIO(image_data))
+                w, h = img.size
+                if w < 100 or h < 100:
+                    print(f"⚠ Skipping small dimensions ({w}x{h}): {image_url}")
+                    return None
+                print(f"✓ Downloaded {len(image_data)} bytes ({w}x{h}, {content_type})")
+            except Exception:
+                # If PIL can't open it, still allow — might be a valid format PIL doesn't support
+                print(f"--- Downloaded {len(image_data)} bytes (Type: {content_type}) ---")
+            
+            return image_data
         else:
             print(f"--- Download failed with status {resp.status_code} ---")
     except Exception as e:
@@ -218,86 +261,185 @@ def download_image_bytes(image_url: str) -> bytes | None:
 
 def scrape_images_from_url(url: str) -> list[str]:
     """
-    Scrapes a webpage for potential product images.
+    Advanced web scraper for product images.
+    Handles modern e-commerce image patterns.
     """
     try:
         from bs4 import BeautifulSoup
-        headers = {'User-Agent': 'Mozilla/5.0'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         resp = requests.get(url, headers=headers, timeout=15)
         if resp.status_code != 200:
             return []
             
         soup = BeautifulSoup(resp.content, 'html.parser')
         images = []
+        seen_urls = set()
         
-        # Look for images that are likely product images
-        for img in soup.find_all('img'):
-            src = img.get('src') or img.get('data-src') or img.get('data-lazy-src')
+        def add_image(src):
+            """Normalize and add image URL if valid."""
             if not src:
-                continue
-            
+                return
             # Resolve relative URLs
-            if src.startswith('/'):
-                from urllib.parse import urljoin
+            if src.startswith('//'):
+                src = 'https:' + src
+            elif src.startswith('/'):
                 src = urljoin(url, src)
             elif not src.startswith('http'):
-                continue
-                
-            # Filter out icons, logos, etc (naive check)
-            if any(x in src.lower() for x in ['logo', 'icon', 'banner', 'pixel', 'sprite']):
-                continue
-                
+                src = urljoin(url, src)
+            
+            # Filter out garbage
+            lower_src = src.lower()
+            if any(x in lower_src for x in ['logo', 'icon', 'banner', 'pixel', 'sprite', 'spacer', 'blank', '1x1', 'tracking', 'analytics']):
+                return
+            if src in seen_urls:
+                return
+            
+            seen_urls.add(src)
             images.append(src)
-            if len(images) >= 10:  # Cap at 10
-                break
+
+        # --- PRIORITY 1: Product-context images ---
+        # Look inside common product containers first
+        product_selectors = [
+            '[class*="product-image"]', '[class*="product_image"]', '[class*="productImage"]',
+            '[class*="gallery"]', '[class*="main-image"]', '[class*="hero-image"]',
+            '[id*="product"]', '[id*="gallery"]',
+            '[class*="swiper"]', '[class*="slider"]', '[class*="carousel"]',
+            '.product-media', '.product-photo', '.product-img',
+        ]
+        
+        for selector in product_selectors:
+            container = soup.select(selector)
+            for el in container:
+                # <img> tags
+                for img in el.find_all('img'):
+                    # Prefer high-res attributes
+                    src = (img.get('data-zoom-image') or img.get('data-full-image') or 
+                           img.get('data-large') or img.get('data-src') or 
+                           img.get('data-lazy-src') or img.get('src'))
+                    add_image(src)
+                    
+                    # Parse srcset for highest resolution
+                    srcset = img.get('srcset')
+                    if srcset:
+                        best_src = _parse_srcset_best(srcset)
+                        if best_src:
+                            add_image(best_src)
                 
-        return images
+                # <picture> / <source> tags
+                for source in el.find_all('source'):
+                    srcset = source.get('srcset')
+                    if srcset:
+                        best_src = _parse_srcset_best(srcset)
+                        if best_src:
+                            add_image(best_src)
+        
+        # --- PRIORITY 2: All page images (fallback) ---
+        if len(images) < 5:
+            for img in soup.find_all('img'):
+                src = (img.get('data-zoom-image') or img.get('data-full-image') or
+                       img.get('data-large') or img.get('data-src') or 
+                       img.get('data-lazy-src') or img.get('src'))
+                add_image(src)
+                if len(images) >= 15:
+                    break
+        
+        # --- PRIORITY 3: Open Graph / meta images ---
+        og_image = soup.find('meta', property='og:image')
+        if og_image and og_image.get('content'):
+            add_image(og_image['content'])
+        
+        twitter_image = soup.find('meta', attrs={'name': 'twitter:image'})
+        if twitter_image and twitter_image.get('content'):
+            add_image(twitter_image['content'])
+        
+        print(f"--- Scraped {len(images)} images from {url} ---")
+        return images[:15]  # Cap at 15
+        
     except Exception as e:
         print(f"Scrape image error: {e}")
         return []
 
 
-
-
+def _parse_srcset_best(srcset: str) -> str | None:
+    """Parse srcset attribute and return the highest resolution URL."""
+    try:
+        entries = []
+        for part in srcset.split(','):
+            part = part.strip()
+            if not part:
+                continue
+            pieces = part.split()
+            if len(pieces) >= 2:
+                url_part = pieces[0]
+                descriptor = pieces[1]
+                # Parse width descriptor (e.g., "800w") or pixel density (e.g., "2x")
+                if descriptor.endswith('w'):
+                    try:
+                        width = int(descriptor[:-1])
+                        entries.append((url_part, width))
+                    except ValueError:
+                        pass
+                elif descriptor.endswith('x'):
+                    try:
+                        density = float(descriptor[:-1])
+                        entries.append((url_part, int(density * 1000)))
+                    except ValueError:
+                        pass
+            elif len(pieces) == 1:
+                entries.append((pieces[0], 0))
+        
+        if entries:
+            entries.sort(key=lambda x: x[1], reverse=True)
+            return entries[0][0]
+    except Exception:
+        pass
+    return None
 
 
 def find_best_images(model_name: str, supplier_url: str | None = None) -> list[str]:
     """
-    Image selection strategy:
-    Returns a list of candidate image URLs.
+    Multi-strategy image search pipeline.
+    Returns a prioritized list of candidate image URLs.
     """
     candidates = []
 
-    # --- 1️ Supplier-domain search (STRICT) ---
+    clean_name = clean_search_query(model_name)
+
+    # --- 1️ Supplier-domain search (HIGHEST PRIORITY) ---
     if supplier_url:
         domain = extract_domain(supplier_url)
         if domain:
-            supplier_query = f"{model_name} product image"
-            print(f"--- Searching Supplier Domain: {domain} ---")
+            supplier_query = f"{clean_name}"
+            print(f"--- Strategy 1: Supplier Domain Search ({domain}) ---")
             candidates.extend(search_google_api(supplier_query, domain=domain))
 
-    # --- 2️ Web Scraping Fallback (If Google fails or returns nothing) ---
-    if not candidates and supplier_url:
-        print(f"--- Attempting Direct Scrape of Supplier URL: {supplier_url} ---")
-        candidates.extend(scrape_images_from_url(supplier_url))
+    # --- 2️ Direct web scraping of supplier page ---
+    if supplier_url:
+        print(f"--- Strategy 2: Direct Scrape of {supplier_url} ---")
+        scraped = scrape_images_from_url(supplier_url)
+        candidates.extend(scraped)
 
-    # --- 3️ Open-web fallback (CLEAN & LOOSE) ---
-    clean_name = clean_search_query(model_name)
-    fallback_query = f"{clean_name} official product image "
-    
-    print(f"--- Fallback Query: '{fallback_query}' ---")
-    print("--- Calling Open Search ---")
-    
-    candidates.extend(search_google_api(fallback_query))
+    # --- 3️ Open-web search with product name ---
+    open_query = f"{clean_name} product"
+    print(f"--- Strategy 3: Open Web Search: '{open_query}' ---")
+    candidates.extend(search_google_api(open_query))
 
-    # Remove duplicates while preserving order
+    # --- 4️ Exact model number search (if different from product name) ---
+    # Sometimes the model number alone yields better results
+    if clean_name.lower() != model_name.lower():
+        exact_query = f"{model_name}"
+        print(f"--- Strategy 4: Exact Model Search: '{exact_query}' ---")
+        candidates.extend(search_google_api(exact_query))
+
+    # Remove duplicates while preserving priority order
     seen = set()
     result = []
     for url in candidates:
-        if url not in seen:
+        if url not in seen and not is_bad_image_url(url):
             result.append(url)
             seen.add(url)
     
+    print(f"--- Total unique candidates: {len(result)} ---")
     return result
 
 
@@ -305,7 +447,7 @@ def find_best_images(model_name: str, supplier_url: str | None = None) -> list[s
 def find_and_validate_image(model_name: str, supplier_url: str | None = None) -> str | None:
     """
     Finds and validates the best product image using a batch selection strategy.
-    Optimized with parallel downloading and domain short-circuiting.
+    Optimized with parallel downloading, size filtering, and domain short-circuiting.
     """
     image_candidates = find_best_images(model_name, supplier_url)
     
@@ -313,8 +455,8 @@ def find_and_validate_image(model_name: str, supplier_url: str | None = None) ->
         print("🚫 No image candidates found")
         return None
 
-    # Limit batch size to 5 to save memory and time
-    max_batch = 5
+    # Evaluate up to 10 candidates (increased from 5)
+    max_batch = 10
     candidates_to_eval = image_candidates[:max_batch]
     
     print(f"🔄 Evaluating {len(candidates_to_eval)} candidate images in parallel")
@@ -322,9 +464,9 @@ def find_and_validate_image(model_name: str, supplier_url: str | None = None) ->
     downloaded_data = [None] * len(candidates_to_eval)
     
     # Use parallel downloading to prevent timeouts
-    with ThreadPoolExecutor(max_workers=max_batch) as executor:
+    with ThreadPoolExecutor(max_workers=min(max_batch, 8)) as executor:
         future_to_url = {executor.submit(download_image_bytes, url): i for i, url in enumerate(candidates_to_eval)}
-        for future in as_completed(future_to_url, timeout=25): # Hard timeout for all downloads
+        for future in as_completed(future_to_url, timeout=30):
             idx = future_to_url[future]
             try:
                 downloaded_data[idx] = future.result()
@@ -341,7 +483,7 @@ def find_and_validate_image(model_name: str, supplier_url: str | None = None) ->
     downloaded_urls = [p[0] for p in valid_pairs]
     downloaded_bytes = [p[1] for p in valid_pairs]
         
-    print(f"🧠 Sending {len(downloaded_bytes)} candidates to AI for ranking...")
+    print(f"🧠 Sending {len(downloaded_bytes)} valid candidates to AI for ranking...")
     best_index = ai_select_best_image(downloaded_bytes, model_name)
     
     if best_index is not None and 0 <= best_index < len(downloaded_urls):

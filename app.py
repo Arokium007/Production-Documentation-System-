@@ -340,17 +340,20 @@ def create_pis():
     if request.method == 'POST':
         model_name = request.form.get('model_name')
         supplier_url = request.form.get('supplier_url')
-        ai_file = request.files.get('ai_document')
+        ai_files = request.files.getlist('ai_document')
         
         # --- NEW: Capture toggle value ---
         # Toggle is 'on' if checked, otherwise None
         contains_images = request.form.get('contains_images') == 'on'
         
-        ai_filepath = None
-        if ai_file:
-            filename = secure_filename(ai_file.filename)
-            ai_filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            ai_file.save(ai_filepath)
+        # Save all uploaded files and collect their paths
+        ai_filepaths = []
+        for ai_file in ai_files:
+            if ai_file and ai_file.filename:
+                filename = secure_filename(ai_file.filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                ai_file.save(filepath)
+                ai_filepaths.append(filepath)
 
         def generate_updates():
             yield json.dumps({"progress": 10, "message": "Initializing Analysis..."}) + "\n"
@@ -362,47 +365,54 @@ def create_pis():
 
             yield json.dumps({"progress": 40, "message": "Generating PIS Content..."}) + "\n"
             try:
-                ai_data = generate_pis_data(ai_filepath, model_name, site_data)
+                ai_data = generate_pis_data(ai_filepaths, model_name, site_data)
                 
                 extracted_image_path = None
                 
-                yield json.dumps({"progress": 60, "message": "Searching Google Images..."}) + "\n"
+                # --- PRIORITY 1: Use AI's found_image_url (from PIS generation) ---
+                ai_found_url = ai_data.get('found_image_url')
+                if ai_found_url and ai_found_url.startswith('http'):
+                    yield json.dumps({"progress": 55, "message": "AI found a product image — downloading..."}) + "\n"
+                    extracted_image_path = download_web_image(ai_found_url, model_name, app.config['UPLOAD_FOLDER'])
                 
-                header = ai_data.get('header_info', {})
-                brand = header.get('brand', '')
-                m_num = header.get('model_number', '')
-                p_name = header.get('product_name', '')
-                
-                q_parts = []
-                if brand: q_parts.append(brand)
-                if p_name: q_parts.append(p_name)
-                
-                if m_num and (any(c.isalpha() for c in m_num) or '-' in m_num):
-                    if m_num not in (p_name or ''):
-                        q_parts.append(m_num)
-                        
-                full_str = " ".join(q_parts)
-                unique_words = []
-                [unique_words.append(x) for x in full_str.split() if x.lower() not in [y.lower() for y in unique_words]]
-                rich_query = " ".join(unique_words)
-                
-                if not rich_query: rich_query = model_name
+                # --- PRIORITY 2: Google Image Search ---
+                if not extracted_image_path:
+                    yield json.dumps({"progress": 60, "message": "Searching Google Images..."}) + "\n"
+                    
+                    header = ai_data.get('header_info', {})
+                    brand = header.get('brand', '')
+                    m_num = header.get('model_number', '')
+                    p_name = header.get('product_name', '')
+                    
+                    q_parts = []
+                    if brand: q_parts.append(brand)
+                    if p_name: q_parts.append(p_name)
+                    
+                    if m_num and (any(c.isalpha() for c in m_num) or '-' in m_num):
+                        if m_num not in (p_name or ''):
+                            q_parts.append(m_num)
+                            
+                    full_str = " ".join(q_parts)
+                    unique_words = []
+                    [unique_words.append(x) for x in full_str.split() if x.lower() not in [y.lower() for y in unique_words]]
+                    rich_query = " ".join(unique_words)
+                    
+                    if not rich_query: rich_query = model_name
 
-                # Execute Google Search
-                public_url = find_and_validate_image(rich_query, supplier_url)
+                    yield " " + "\n"  # Heartbeat
+                    public_url = find_and_validate_image(rich_query, supplier_url)
 
-                
-                if public_url:
-                    yield json.dumps({"progress": 70, "message": "Downloading Image..."}) + "\n"
-                    extracted_image_path = download_web_image(public_url, model_name, app.config['UPLOAD_FOLDER'])
+                    if public_url:
+                        yield json.dumps({"progress": 70, "message": "Downloading Image..."}) + "\n"
+                        extracted_image_path = download_web_image(public_url, model_name, app.config['UPLOAD_FOLDER'])
 
                 # Heartbeat before potential PDF scan
                 yield " " + "\n"
 
-                # --- UPDATED Fallback: PDF Scan based on Toggle ---
-                if not extracted_image_path and ai_filepath and contains_images:
-                    yield json.dumps({"progress": 80, "message": "Google failed. Scanning PDF..."}) + "\n"
-                    extracted_image_path = extract_specific_image(ai_filepath, model_name, app.config['UPLOAD_FOLDER'])
+                # --- PRIORITY 3: PDF Scan Fallback ---
+                if not extracted_image_path and ai_filepaths and contains_images:
+                    yield json.dumps({"progress": 80, "message": "Scanning PDF for product image..."}) + "\n"
+                    extracted_image_path = extract_specific_image(ai_filepaths[0], model_name, app.config['UPLOAD_FOLDER'])
 
                 if extracted_image_path:
                     yield json.dumps({"progress": 90, "message": "Visual Acquired."}) + "\n"
@@ -488,56 +498,93 @@ def create_bulk():
                         processed_count += 1
                         current_progress = 20 + int((processed_count / total_items) * 75) 
                         
-                        query_parts = []
-                        if brand: query_parts.append(brand)
-                        if prod_name: query_parts.append(prod_name)
-                        
-                        is_real_model = model_id and (any(c.isalpha() for c in model_id) or '-' in model_id)
-                        if is_real_model and (model_id not in (prod_name or '')):
-                            query_parts.append(model_id)
-
-                        seen_words = set()
-                        unique_words = []
-                        for w in " ".join(query_parts).split():
-                            if w.lower() not in seen_words:
-                                unique_words.append(w)
-                                seen_words.add(w.lower())
-                        
-                        search_query = " ".join(unique_words) if unique_words else display_name
-                        
                         yield json.dumps({
                             "progress": current_progress, 
                             "message": f"Processing: {display_name}",
                             "item_update": {"name": display_name, "status": "searching"}
                         }) + "\n"
 
-                        # Primary Search: Google
-                        yield " " + "\n" # Heartbeat
-                        image_url = find_and_validate_image(search_query, supplier_url)
+                        # --- Per-product try/except: one failure won't kill the batch ---
+                        try:
+                            query_parts = []
+                            if brand: query_parts.append(brand)
+                            if prod_name: query_parts.append(prod_name)
+                            
+                            is_real_model = model_id and (any(c.isalpha() for c in model_id) or '-' in model_id)
+                            if is_real_model and (model_id not in (prod_name or '')):
+                                query_parts.append(model_id)
 
-                        yield " " + "\n" # Heartbeat
-                        extracted_image_path = None
-                        if image_url:
-                            extracted_image_path = download_web_image(image_url, display_name, app.config['UPLOAD_FOLDER'])
+                            seen_words = set()
+                            unique_words = []
+                            for w in " ".join(query_parts).split():
+                                if w.lower() not in seen_words:
+                                    unique_words.append(w)
+                                    seen_words.add(w.lower())
+                            
+                            search_query = " ".join(unique_words) if unique_words else display_name
+                            
+                            extracted_image_path = None
 
-                        # --- UPDATED Fallback: PDF Scan based on Toggle ---
-                        if not extracted_image_path and contains_images:
-                             extracted_image_path = extract_specific_image(ai_filepath, model_id, app.config['UPLOAD_FOLDER'])
+                            # --- PRIORITY 1: Use AI's found_image_url ---
+                            ai_found_url = p_data.get('found_image_url')
+                            if ai_found_url and str(ai_found_url).startswith('http'):
+                                yield " " + "\n"  # Heartbeat
+                                extracted_image_path = download_web_image(ai_found_url, display_name, app.config['UPLOAD_FOLDER'])
+                                yield " " + "\n"  # Heartbeat
 
-                        new_product = Product(
-                            model_name=display_name,
-                            pis_data=p_data,
-                            image_path=extracted_image_path, 
-                            seo_keywords=p_data.get('seo_data', {}).get('generated_keywords', ''),
-                            workflow_stage='marketing_draft'
-                        )
-                        db.session.add(new_product)
-                        db.session.commit()
-                        log_event(new_product.id, 'Marketing Team', 'PIS Draft Created', 'Imported via Bulk Tool.', 'neutral')
+                            # --- PRIORITY 2: Google Image Search ---
+                            if not extracted_image_path:
+                                yield " " + "\n"  # Heartbeat before search
+                                image_url = find_and_validate_image(search_query, supplier_url)
+                                yield " " + "\n"  # Heartbeat after search
 
-                        yield json.dumps({
-                            "item_update": {"name": display_name, "status": "completed"}
-                        }) + "\n"
+                                if image_url:
+                                    yield " " + "\n"  # Heartbeat before download
+                                    extracted_image_path = download_web_image(image_url, display_name, app.config['UPLOAD_FOLDER'])
+                                    yield " " + "\n"  # Heartbeat after download
+
+                            # --- PRIORITY 3: PDF Scan Fallback ---
+                            if not extracted_image_path and contains_images:
+                                yield " " + "\n"  # Heartbeat before PDF scan
+                                extracted_image_path = extract_specific_image(ai_filepath, model_id, app.config['UPLOAD_FOLDER'])
+                                yield " " + "\n"  # Heartbeat after PDF scan
+
+                            new_product = Product(
+                                model_name=display_name,
+                                pis_data=p_data,
+                                image_path=extracted_image_path, 
+                                seo_keywords=p_data.get('seo_data', {}).get('generated_keywords', ''),
+                                workflow_stage='marketing_draft'
+                            )
+                            db.session.add(new_product)
+                            db.session.commit()
+                            log_event(new_product.id, 'Marketing Team', 'PIS Draft Created', 'Imported via Bulk Tool.', 'neutral')
+
+                            yield json.dumps({
+                                "item_update": {"name": display_name, "status": "completed"}
+                            }) + "\n"
+
+                        except Exception as product_err:
+                            print(f"⚠️ Bulk import error for '{display_name}': {product_err}")
+                            # Save the product anyway (without image) so data isn't lost
+                            try:
+                                fallback_product = Product(
+                                    model_name=display_name,
+                                    pis_data=p_data,
+                                    image_path=None,
+                                    seo_keywords=p_data.get('seo_data', {}).get('generated_keywords', ''),
+                                    workflow_stage='marketing_draft'
+                                )
+                                db.session.add(fallback_product)
+                                db.session.commit()
+                                log_event(fallback_product.id, 'Marketing Team', 'PIS Draft Created', f'Imported via Bulk (image search failed: {str(product_err)[:80]}).', 'neutral')
+                            except Exception:
+                                db.session.rollback()
+
+                            yield json.dumps({
+                                "item_update": {"name": display_name, "status": "completed"},
+                                "message": f"Saved {display_name} (image skipped)"
+                            }) + "\n"
 
                 yield json.dumps({"progress": 100, "message": "Bulk Import Complete!", "redirect": url_for('dashboard_marketing')}) + "\n"
             

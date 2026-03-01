@@ -11,13 +11,29 @@ from .category_classifier import classify_product_category
 from .json_utils import safe_json_loads
 
 
-def generate_pis_data(file_path, model_name, url_data):
-    """Generate single PIS data from uploaded file."""
-    # 1. Upload File
-    uploaded_file = genai.upload_file(file_path)
-    while uploaded_file.state.name == "PROCESSING":
-        time.sleep(1)
-        uploaded_file = genai.get_file(uploaded_file.name)
+def generate_pis_data(file_paths, model_name, url_data):
+    """Generate single PIS data from uploaded file(s) and/or website data.
+    
+    Args:
+        file_paths: A single file path string, a list of file paths, or empty list/None.
+        model_name: The product model name.
+        url_data: Scraped website data dict.
+    """
+    # Normalize file_paths
+    if file_paths is None:
+        file_paths = []
+    elif isinstance(file_paths, str):
+        file_paths = [file_paths]
+    
+    # 1. Upload files to Gemini (if any)
+    uploaded_files = []
+    for fp in file_paths:
+        if fp:
+            uf = genai.upload_file(fp)
+            while uf.state.name == "PROCESSING":
+                time.sleep(1)
+                uf = genai.get_file(uf.name)
+            uploaded_files.append(uf)
     
     # Context Construction
     web_context = ""
@@ -29,15 +45,25 @@ def generate_pis_data(file_path, model_name, url_data):
 
     model = genai.GenerativeModel('models/gemini-flash-latest')
 
+    # Build source description based on what's available
+    if uploaded_files and web_context:
+        source_instruction = f"Analyze ALL {len(uploaded_files)} uploaded document(s) (Proforma Invoices/Spec Sheets) AND the provided Website Context. Cross-reference information across all sources."
+    elif uploaded_files:
+        source_instruction = f"Analyze ALL {len(uploaded_files)} uploaded document(s) (Proforma Invoices/Spec Sheets) thoroughly."
+    else:
+        source_instruction = "Analyze the provided Website Context thoroughly. Extract all product details from the website data."
+
     prompt = f"""
     You are an expert Product Data Specialist and Technical Researcher.
     
+    Product to research: {model_name}
+    
     TASK:
-    1. EXTENSIVE RESEARCH: Analyze the uploaded document (Proforma Invoice/Spec Sheet) and the provided Website Context.
+    1. EXTENSIVE RESEARCH: {source_instruction}
     2. FACTUAL INTEGRITY: Identify specific technical features, performance metrics, and unique selling points.
     3. **STRICT RULES**: 
        - DO NOT invent, assume, or hallucinate any details.
-       - If a detail is not in the document or website context, omit it or state it's unavailable.
+       - If a detail is not in the documents or website context, omit it or state it's unavailable.
        - **INDEPENDENT CONTENT**: This description must be standalone. NEVER refer to other products, model variations, or colors in your text. Each overview must be unique and fully populated.
     4. HERO IMAGE SELECTION:
        - Review the 'IMAGE CANDIDATES' list below.
@@ -71,8 +97,11 @@ def generate_pis_data(file_path, model_name, url_data):
     }}
     """
     
+    # Build content list: prompt + any uploaded files
+    content_parts = [prompt] + uploaded_files
+    
     response = model.generate_content(
-        [prompt, uploaded_file], 
+        content_parts, 
         generation_config={"response_mime_type": "application/json"}
     )
     return safe_json_loads(response.text, fallback={})

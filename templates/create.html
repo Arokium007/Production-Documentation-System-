@@ -55,7 +55,7 @@
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Technical
-                        Document</label>
+                        Documents</label>
                     <span id="doc-count-badge"
                         class="hidden text-[10px] font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100 animate-fade-in shadow-sm">
                         0 Documents Ready
@@ -68,7 +68,7 @@
                     </div>
                     <label
                         class="relative border-2 border-dashed border-slate-200 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-red-300 transition-all bg-slate-50/50 group-hover:bg-white overflow-hidden">
-                        <input type="file" id="ai_document_input" name="ai_document" required
+                        <input type="file" id="ai_document_input" name="ai_document" multiple
                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
 
                         <div
@@ -79,12 +79,14 @@
                             </svg>
                         </div>
                         <p class="text-sm font-bold text-slate-700">Click to upload technical files</p>
-                        <p class="text-xs text-slate-400 mt-2">PDF, DOCX, or Images for high-precision extraction</p>
+                        <p class="text-xs text-slate-400 mt-2">PDF, DOCX, or Images — select multiple files at once or
+                            add more later</p>
                     </label>
                 </div>
 
-                <div id="file-preview-area" class="mt-4 hidden animate-fade-in"></div>
+                <div id="file-preview-area" class="mt-4 hidden space-y-2 animate-fade-in"></div>
             </div>
+
 
             <!-- 4. OPTIONS SECTION -->
             <div
@@ -226,20 +228,42 @@
     const docCountBadge = document.getElementById('doc-count-badge');
     const filePreviewArea = document.getElementById('file-preview-area');
 
+    // Managed file list — persists across multiple selections
+    let managedFiles = [];
+
     docInput.addEventListener('change', function (e) {
-        const files = e.target.files;
+        const newFiles = Array.from(e.target.files);
+        if (newFiles.length === 0) return;
 
-        if (files.length > 0) {
-            docCountBadge.textContent = `${files.length} Document${files.length > 1 ? 's' : ''} Ready`;
-            docCountBadge.classList.remove('hidden');
-            filePreviewArea.classList.remove('hidden');
-            filePreviewArea.innerHTML = '';
+        // Append new files (avoid duplicates by name+size)
+        for (const file of newFiles) {
+            const isDuplicate = managedFiles.some(f => f.name === file.name && f.size === file.size);
+            if (!isDuplicate) {
+                managedFiles.push(file);
+            }
+        }
 
-            const file = files[0];
+        renderFilePreviews();
+        syncInputFiles();
+    });
+
+    function renderFilePreviews() {
+        filePreviewArea.innerHTML = '';
+
+        if (managedFiles.length === 0) {
+            docCountBadge.classList.add('hidden');
+            filePreviewArea.classList.add('hidden');
+            return;
+        }
+
+        docCountBadge.textContent = `${managedFiles.length} Document${managedFiles.length > 1 ? 's' : ''} Ready`;
+        docCountBadge.classList.remove('hidden');
+        filePreviewArea.classList.remove('hidden');
+
+        managedFiles.forEach((file, index) => {
             const fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
-
             const html = `
-            <div class="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-2xl animate-fade-in shadow-sm">
+            <div class="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-2xl animate-fade-in shadow-sm" data-file-index="${index}">
                 <div class="flex items-center gap-4">
                     <div class="p-3 bg-white rounded-xl text-red-500 shadow-sm border border-red-50">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -249,19 +273,30 @@
                         <p class="text-[10px] font-bold text-red-400 uppercase tracking-widest">${fileSize}</p>
                     </div>
                 </div>
-                <button type="button" onclick="clearFiles()" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-white rounded-xl transition-all">
+                <button type="button" onclick="removeFile(${index})" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-white rounded-xl transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-        `;
+            `;
             filePreviewArea.insertAdjacentHTML('beforeend', html);
+        });
+    }
 
-        } else {
-            clearFiles();
-        }
-    });
+    function removeFile(index) {
+        managedFiles.splice(index, 1);
+        renderFilePreviews();
+        syncInputFiles();
+    }
+
+    function syncInputFiles() {
+        // Sync managed file list back to the native input using DataTransfer
+        const dt = new DataTransfer();
+        managedFiles.forEach(f => dt.items.add(f));
+        docInput.files = dt.files;
+    }
 
     function clearFiles() {
+        managedFiles = [];
         docInput.value = '';
         docCountBadge.classList.add('hidden');
         filePreviewArea.classList.add('hidden');
@@ -270,6 +305,14 @@
 
     document.getElementById('pisForm').addEventListener('submit', async function (e) {
         e.preventDefault();
+
+        // Validate: at least one data source required (document or URL)
+        const supplierUrl = this.querySelector('[name="supplier_url"]').value.trim();
+        if (managedFiles.length === 0 && !supplierUrl) {
+            alert("Please upload at least one document or provide a supplier URL.");
+            return;
+        }
+
         const alpineData = Alpine.$data(this.closest('[x-data]'));
 
         alpineData.isProcessing = true;
@@ -277,6 +320,10 @@
         alpineData.statusMessage = "Uploading Data...";
 
         const formData = new FormData(this);
+
+        // Ensure managed files are in the FormData (replace any stale input data)
+        formData.delete('ai_document');
+        managedFiles.forEach(f => formData.append('ai_document', f));
 
         try {
             const response = await fetch("{{ url_for('create_pis') }}", {
