@@ -150,32 +150,37 @@ def _extract_via_screenshot(pdf_path, target_model, upload_folder):
                 pil_image = Image.open(io.BytesIO(page_img_bytes))
                 
                 prompt = f"""
-You are an expert at finding product images in PDF documents.
+You are an expert at finding specific product images in PDF documents.
 
-TASK: Find the main product image/photo for: "{target_model}"
+TASK: Find the image/photo for THIS SPECIFIC product: "{target_model}"
 
-WHAT TO LOOK FOR:
-- A photograph or rendering of the physical product (appliance, device, equipment, etc.)
-- The product should take up a significant portion of the image area
-- It can be a standalone product photo, lifestyle shot, or product in packaging
+⚠️ CRITICAL — MULTIPLE PRODUCTS WARNING:
+This page may contain MULTIPLE different products (e.g., a table/catalog with several items side by side).
+You MUST identify the CORRECT image that belongs to "{target_model}" specifically.
 
-WHAT TO IGNORE:
+HOW TO IDENTIFY THE CORRECT PRODUCT:
+1. Look for TEXT LABELS near each image — model numbers, product names, descriptions
+2. Match those text labels to "{target_model}"
+3. The correct image is the one DIRECTLY ADJACENT to or IN THE SAME COLUMN/ROW as the matching text
+4. In TABLE LAYOUTS: products are usually in columns. Find the column whose header/label matches "{target_model}", then select the image in that same column
+5. Do NOT just pick the largest or most prominent image — pick the one that MATCHES the product name
+
+WHAT A VALID PRODUCT IMAGE LOOKS LIKE:
+- A photograph or rendering of the physical product
+- Can be a studio shot, lifestyle image, or product in packaging
+
+WHAT TO SKIP:
 - Company logos, brand badges, certification marks
-- Small technical diagrams, wiring diagrams, schematics 
-- Charts, tables, or text-heavy sections
-- QR codes, barcodes, stamps
-- Decorative borders or backgrounds
-- Very small thumbnail images
+- Charts, tables (the data part), text-only sections
+- QR codes, barcodes
+- Images that belong to a DIFFERENT product on the same page
 
 BOUNDING BOX FORMAT:
 Return the bounding box as [ymin, xmin, ymax, xmax] on a 0-1000 scale.
-- 0,0 is the top-left corner
-- 1000,1000 is the bottom-right corner
-
-If you find the product image, the bounding box should be TIGHT around just the product, with minimal extra space.
+The box should be TIGHT around just the product image, with minimal extra space.
 
 Output JSON:
-{{ "found": true, "box_2d": [ymin, xmin, ymax, xmax], "confidence": "high" or "medium" or "low" }}
+{{ "found": true, "box_2d": [ymin, xmin, ymax, xmax], "confidence": "high" or "medium" or "low", "matched_label": "the text near the image that helped you identify it" }}
 or
 {{ "found": false }}
 """
@@ -268,27 +273,32 @@ or
 
 
 def _ai_pick_best_from_candidates(candidates, target_model, upload_folder):
-    """Use AI to select the best product image from embedded PDF candidates."""
+    """Use AI to select the image that matches a specific product from embedded PDF candidates."""
     try:
         model = genai.GenerativeModel('models/gemini-flash-latest')
         
         prompt = f"""
 You are an expert Visual Quality Controller.
-Product Name: "{target_model}"
+Product to match: "{target_model}"
 
 TASK:
 Review the attached images (labeled 1 to {len(candidates)}) extracted from a PDF document.
-Select the SINGLE image that is the best product photograph for "{target_model}".
+Select the SINGLE image that best represents THIS SPECIFIC product: "{target_model}"
+
+⚠️ IMPORTANT: The PDF may contain images of MULTIPLE DIFFERENT products.
+Do NOT just pick the "best looking" image — pick the one that matches "{target_model}".
+
+If you can distinguish between products visually (e.g., a frypan vs a saucepan vs a casserole),
+pick the one that matches the product name/description.
 
 PREFER:
-- Clear product photos (studio shots, lifestyle images)
+- Clear product photos that match the product type described in "{target_model}"
 - Large, high-quality images of the actual product
 
 AVOID:
+- Images that clearly show a DIFFERENT product type
 - Logos, certification marks, brand badges
-- Technical diagrams, wiring schematics
-- Charts, tables, or text blocks rendered as images
-- Very small or blurry images
+- Technical diagrams, charts, text blocks
 
 Output JSON:
 {{ "best_index": 1 }} or {{ "best_index": "none" }}
