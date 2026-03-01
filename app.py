@@ -470,16 +470,25 @@ def create_bulk():
 
     if request.method == 'POST':
         supplier_url = request.form.get('supplier_url')
-        ai_file = request.files.get('ai_document')
+        ai_files = request.files.getlist('ai_document')
         
         # --- NEW: Capture toggle value ---
         contains_images = request.form.get('contains_images') == 'on'
         
-        if not ai_file: return "No file uploaded", 400
+        # Save all uploaded files and collect their paths
+        ai_filepaths = []
+        for ai_file in ai_files:
+            if ai_file and ai_file.filename:
+                filename = secure_filename(ai_file.filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                ai_file.save(filepath)
+                ai_filepaths.append(filepath)
+        
+        if not ai_filepaths:
+            return "No file uploaded", 400
 
-        filename = secure_filename(ai_file.filename)
-        ai_filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        ai_file.save(ai_filepath)
+        # Keep first filepath for PDF scan fallback
+        ai_filepath = ai_filepaths[0]
 
         def generate_bulk_updates():
             yield json.dumps({"progress": 10, "message": "Analyzing Invoice..."}) + "\n"
@@ -489,7 +498,7 @@ def create_bulk():
                 site_data = scrape_url_data(supplier_url)
             
             try:
-                products_list = generate_bulk_pis_data(ai_filepath, site_data)
+                products_list = generate_bulk_pis_data(ai_filepaths, site_data)
                 total_items = len(products_list)
                 
                 # Yield the list of product names to the frontend early

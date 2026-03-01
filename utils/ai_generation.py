@@ -231,12 +231,28 @@ def generate_comprehensive_spec_data(pis_data):
         return fallback_data
 
 
-def generate_bulk_pis_data(file_path, url_data):
-    """Generate bulk PIS data for multiple products."""
-    uploaded_file = genai.upload_file(file_path)
-    while uploaded_file.state.name == "PROCESSING":
-        time.sleep(1)
-        uploaded_file = genai.get_file(uploaded_file.name)
+def generate_bulk_pis_data(file_paths, url_data):
+    """Generate bulk PIS data for multiple products from one or more documents.
+    
+    Args:
+        file_paths: A single file path string, a list of file paths, or empty list/None.
+        url_data: Scraped website data dict.
+    """
+    # Normalize file_paths
+    if file_paths is None:
+        file_paths = []
+    elif isinstance(file_paths, str):
+        file_paths = [file_paths]
+    
+    # Upload all files to Gemini
+    uploaded_files = []
+    for fp in file_paths:
+        if fp:
+            uploaded_file = genai.upload_file(fp)
+            while uploaded_file.state.name == "PROCESSING":
+                time.sleep(1)
+                uploaded_file = genai.get_file(uploaded_file.name)
+            uploaded_files.append(uploaded_file)
     
     web_context = ""
     image_candidates_str = ""
@@ -249,7 +265,8 @@ def generate_bulk_pis_data(file_path, url_data):
     
     prompt = f"""
     You are an expert Product Data Specialist and Technical Researcher. 
-    The uploaded document is a list of products (Invoice/Catalog).
+    The uploaded document(s) contain a list of products (Invoice/Catalog).
+    Analyze ALL uploaded documents together.
     
     Task:
     1. Identify EVERY unique product model listed.
@@ -282,8 +299,10 @@ def generate_bulk_pis_data(file_path, url_data):
     ]
     """
     
+    content_parts = [prompt] + uploaded_files
+    
     response = model.generate_content(
-        [prompt, uploaded_file], 
+        content_parts, 
         generation_config={"response_mime_type": "application/json"}
     )
     return safe_json_loads(response.text, fallback=[])

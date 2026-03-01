@@ -27,9 +27,12 @@
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">
-                        Source Document
+                        Source Documents
                     </label>
-                    <span class="text-[10px] font-bold text-slate-300">PDF • CSV • JPG • PNG</span>
+                    <span id="doc-count-badge"
+                        class="hidden text-[10px] font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100 shadow-sm">
+                        0 Documents Ready
+                    </span>
                 </div>
 
                 <div class="relative group">
@@ -46,14 +49,15 @@
                                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                 </svg>
                             </div>
-                            <p class="mb-1 text-sm text-slate-700 font-bold" id="fileTitle">Choose a file or drop it
-                                here</p>
-                            <p class="text-xs text-slate-400" id="fileSubtitle">Max size 20MB</p>
+                            <p class="mb-1 text-sm text-slate-700 font-bold">Click to upload source documents</p>
+                            <p class="text-xs text-slate-400">PDF, CSV, JPG, PNG — select multiple files at once or add
+                                more later</p>
                         </div>
-                        <input type="file" name="ai_document" id="ai_document" required class="hidden"
-                            onchange="const f = this.files[0]; if(f) { document.getElementById('fileTitle').innerText=f.name; document.getElementById('fileSubtitle').innerText=(f.size/1024/1024).toFixed(2)+' MB'; }">
+                        <input type="file" name="ai_document" id="ai_document" multiple required class="hidden">
                     </label>
                 </div>
+
+                <div id="file-preview-area" class="mt-4 hidden space-y-2"></div>
             </div>
 
             <!-- 2. CONTEXT SECTION -->
@@ -324,9 +328,86 @@
 </style>
 
 <script>
+    // ===== Managed File List =====
+    const docInput = document.getElementById('ai_document');
+    const filePreviewArea = document.getElementById('file-preview-area');
+    const docCountBadge = document.getElementById('doc-count-badge');
+    let managedFiles = [];
+
+    docInput.addEventListener('change', function () {
+        const newFiles = Array.from(this.files);
+        newFiles.forEach(f => {
+            if (!managedFiles.some(existing => existing.name === f.name && existing.size === f.size)) {
+                managedFiles.push(f);
+            }
+        });
+        renderFilePreviews();
+        syncInputFiles();
+    });
+
+    function renderFilePreviews() {
+        if (managedFiles.length === 0) {
+            filePreviewArea.classList.add('hidden');
+            docCountBadge.classList.add('hidden');
+            docInput.setAttribute('required', 'required');
+            return;
+        }
+
+        docInput.removeAttribute('required');
+        filePreviewArea.classList.remove('hidden');
+        docCountBadge.classList.remove('hidden');
+        docCountBadge.textContent = `${managedFiles.length} Document${managedFiles.length > 1 ? 's' : ''} Ready`;
+        filePreviewArea.innerHTML = '';
+
+        managedFiles.forEach((file, index) => {
+            const fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            const ext = file.name.split('.').pop().toUpperCase();
+            const html = `
+            <div class="flex items-center justify-between bg-white border border-slate-100 rounded-xl px-4 py-3 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                        <span class="text-[10px] font-black text-red-500">${ext}</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-slate-800 truncate max-w-xs">${file.name}</p>
+                        <p class="text-[10px] font-bold text-red-400 uppercase tracking-widest">${fileSize}</p>
+                    </div>
+                </div>
+                <button type="button" onclick="removeFile(${index})" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-white rounded-xl transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            `;
+            filePreviewArea.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    function removeFile(index) {
+        managedFiles.splice(index, 1);
+        renderFilePreviews();
+        syncInputFiles();
+    }
+
+    function syncInputFiles() {
+        const dt = new DataTransfer();
+        managedFiles.forEach(f => dt.items.add(f));
+        docInput.files = dt.files;
+    }
+
+    // ===== Form Submission =====
     async function submitForm(e) {
         const form = e.target;
         const formData = new FormData(form);
+
+        // Replace native file list with managed files
+        formData.delete('ai_document');
+        managedFiles.forEach(f => formData.append('ai_document', f));
+
+        if (managedFiles.length === 0) {
+            alert('Please upload at least one document.');
+            return;
+        }
+
         const alpineData = Alpine.$data(form);
 
         alpineData.isProcessing = true;
