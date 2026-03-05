@@ -231,12 +231,13 @@ def generate_comprehensive_spec_data(pis_data):
         return fallback_data
 
 
-def generate_bulk_pis_data(file_paths, url_data):
+def generate_bulk_pis_data(file_paths, url_data, product_filter=""):
     """Generate bulk PIS data for multiple products from one or more documents.
     
     Args:
         file_paths: A single file path string, a list of file paths, or empty list/None.
         url_data: Scraped website data dict.
+        product_filter: Optional newline-separated string of specific product names/models to extract.
     """
     # Normalize file_paths
     if file_paths is None:
@@ -261,6 +262,19 @@ def generate_bulk_pis_data(file_paths, url_data):
         candidates = url_data.get('image_candidates', [])
         image_candidates_str = "IMAGE CANDIDATES (Ranked by crawler):\n" + "\n".join([f"- {url}" for url in candidates])
 
+    # Build product filter instruction
+    product_filter_instruction = ""
+    if product_filter:
+        filter_lines = [line.strip() for line in product_filter.split('\n') if line.strip()]
+        if filter_lines:
+            product_list_str = "\n".join([f"- {p}" for p in filter_lines])
+            product_filter_instruction = f"""
+    **PRODUCT FILTER — CRITICAL**:
+    Extract ONLY the following specific products. Ignore all other products in the document/URL:
+{product_list_str}
+    Match by product name, model number, or any close variation. If a listed product is not found, skip it.
+    """
+
     model = genai.GenerativeModel('models/gemini-flash-latest')
     
     prompt = f"""
@@ -269,7 +283,7 @@ def generate_bulk_pis_data(file_paths, url_data):
     Analyze ALL uploaded documents together.
     
     Task:
-    1. Identify EVERY unique product model listed.
+    1. {"Identify ONLY the specific products listed in the PRODUCT FILTER below." if product_filter_instruction else "Identify EVERY unique product model listed."}
     2. FACTUAL ENRICHMENT: Use the Website Context to identify deep specs and detailed descriptions.
     3. **STRICT ACCURACY**: Do NOT hallucinate or invent features. 
     4. **INDEPENDENT DESCRIPTIONS**: 
@@ -280,6 +294,8 @@ def generate_bulk_pis_data(file_paths, url_data):
        - For each product, review the 'IMAGE CANDIDATES' list below.
        - **CRITICAL**: Select the single URL that represents the **HERO SHOT** (main product image).
        - AVOID diagrams, technical drawings, internal components, icons, or secondary thumbnails.
+    
+    {product_filter_instruction}
     
     {image_candidates_str}
     

@@ -98,6 +98,31 @@
                 </div>
             </div>
 
+            <!-- 3. PRODUCT FILTER SECTION -->
+            <div class="space-y-4 pt-2">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        Products to Extract <span class="text-slate-300 font-normal lowercase">(Optional)</span>
+                    </label>
+                    <span class="text-[10px] text-slate-400 font-medium">One product per line</span>
+                </div>
+                <div class="relative">
+                    <div class="absolute top-4 left-0 pl-4 flex items-start pointer-events-none text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                    </div>
+                    <textarea name="product_filter" rows="4"
+                        placeholder="Samsung RF28R7351SR&#10;LG LRMVS3006S&#10;Whirlpool WRS325SDHZ"
+                        class="block w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-red-500/5 focus:border-red-400 outline-none transition-all text-sm resize-none"></textarea>
+                </div>
+                <p class="text-[10px] text-slate-400 font-medium pl-1">
+                    Specify product names or model numbers to extract only those items. Leave empty to extract all
+                    products found.
+                </p>
+            </div>
+
             <!-- ACTION BUTTON -->
             <div class="pt-6">
                 <button type="submit"

@@ -472,8 +472,11 @@ def create_bulk():
         supplier_url = request.form.get('supplier_url')
         ai_files = request.files.getlist('ai_document')
         
-        # --- NEW: Capture toggle value ---
+        # --- Capture toggle value ---
         contains_images = request.form.get('contains_images') == 'on'
+        
+        # --- Capture product filter (specific products to extract) ---
+        product_filter = request.form.get('product_filter', '').strip()
         
         # Save all uploaded files and collect their paths
         ai_filepaths = []
@@ -498,7 +501,7 @@ def create_bulk():
                 site_data = scrape_url_data(supplier_url)
             
             try:
-                products_list = generate_bulk_pis_data(ai_filepaths, site_data)
+                products_list = generate_bulk_pis_data(ai_filepaths, site_data, product_filter=product_filter)
                 total_items = len(products_list)
                 
                 # Yield the list of product names to the frontend early
