@@ -53,7 +53,7 @@
                             <p class="text-xs text-slate-400">PDF, CSV, JPG, PNG — select multiple files at once or add
                                 more later</p>
                         </div>
-                        <input type="file" name="ai_document" id="ai_document" multiple required class="hidden">
+                        <input type="file" name="ai_document" id="ai_document" multiple class="hidden">
                     </label>
                 </div>
 
@@ -349,7 +349,7 @@
         if (managedFiles.length === 0) {
             filePreviewArea.classList.add('hidden');
             docCountBadge.classList.add('hidden');
-            docInput.setAttribute('required', 'required');
+            // No longer force required — URL alone is sufficient
             return;
         }
 
@@ -403,8 +403,9 @@
         formData.delete('ai_document');
         managedFiles.forEach(f => formData.append('ai_document', f));
 
-        if (managedFiles.length === 0) {
-            alert('Please upload at least one document.');
+        const supplierUrl = formData.get('supplier_url');
+        if (managedFiles.length === 0 && !supplierUrl) {
+            alert('Please provide at least a document or a supplier URL.');
             return;
         }
 

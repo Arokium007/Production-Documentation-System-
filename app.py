@@ -484,11 +484,11 @@ def create_bulk():
                 ai_file.save(filepath)
                 ai_filepaths.append(filepath)
         
-        if not ai_filepaths:
-            return "No file uploaded", 400
+        if not ai_filepaths and not supplier_url:
+            return "Please provide at least a document or a supplier URL.", 400
 
-        # Keep first filepath for PDF scan fallback
-        ai_filepath = ai_filepaths[0]
+        # Keep first filepath for PDF scan fallback (if any files were uploaded)
+        ai_filepath = ai_filepaths[0] if ai_filepaths else None
 
         def generate_bulk_updates():
             yield json.dumps({"progress": 10, "message": "Analyzing Invoice..."}) + "\n"
@@ -559,9 +559,10 @@ def create_bulk():
                             # When toggle is ON: PDF first, then web fallback
                             # When toggle is OFF: Web first (AI url → Google)
                             if contains_images:
-                                # --- PDF FIRST ---
-                                yield " " + "\n"
-                                extracted_image_path = extract_specific_image(ai_filepath, model_id, app.config['UPLOAD_FOLDER'])
+                                # --- PDF FIRST (only if a file was uploaded) ---
+                                if ai_filepath:
+                                    yield " " + "\n"
+                                    extracted_image_path = extract_specific_image(ai_filepath, model_id, app.config['UPLOAD_FOLDER'])
                                 yield " " + "\n"
 
                                 # Fallback to web if PDF found nothing
