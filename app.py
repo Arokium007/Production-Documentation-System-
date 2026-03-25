@@ -4,11 +4,12 @@ import re
 import time
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, request, redirect, url_for, Response, stream_with_context, session, flash
+from flask import Flask, render_template, request, redirect, url_for, Response, stream_with_context, session, flash, jsonify
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import google.generativeai as genai
-from model import db, Product, ProductHistory
+from model import db, Product, ProductHistory, User, ProductVersion, FieldChangeLog
+import copy
 from datetime import datetime, timedelta
 from duckduckgo_search import DDGS
 from playwright.sync_api import sync_playwright
@@ -38,6 +39,20 @@ with app.app_context():
     if not os.path.exists('instance'): os.makedirs('instance')
     db.create_all()
     if not os.path.exists(app.config['UPLOAD_FOLDER']): os.makedirs(app.config['UPLOAD_FOLDER'])
+    
+    # Seed default admin account on first run
+    if not User.query.filter_by(role='admin').first():
+        admin = User(
+            username='admin',
+            email='admin@jkalachand.com',
+            role='admin',
+            display_name='System Admin',
+            is_active=True
+        )
+        admin.set_password('admin123')
+        db.session.add(admin)
+        db.session.commit()
+        print('✅ Default admin account created: admin@jkalachand.com / admin123')
 
 
 # Import utility functions from utils package
@@ -63,18 +78,115 @@ from utils.pdf_processing import extract_specific_image, clear_pdf_cache
 from utils.history import log_event
 
 
+# ================= HELPERS: VERSION & DIFF =================
+
+def get_current_username():
+    """Get the display name or username of the currently logged in user."""
+    user_id = session.get('user_id')
+    if user_id:
+        user = User.query.get(user_id)
+        if user:
+            return user.display_name or user.username
+    return session.get('role', 'System').capitalize()
+
+
+def save_version_snapshot(product, label='Auto-save'):
+    """Save a full snapshot of the product's current state."""
+    try:
+        last_version = ProductVersion.query.filter_by(product_id=product.id).order_by(ProductVersion.version_num.desc()).first()
+        next_num = (last_version.version_num + 1) if last_version else 1
+        
+        version = ProductVersion(
+            product_id=product.id,
+            version_num=next_num,
+            pis_data=copy.deepcopy(product.pis_data) if product.pis_data else None,
+            spec_data=copy.deepcopy(product.spec_data) if product.spec_data else None,
+            revision_data=copy.deepcopy(product.revision_data) if product.revision_data else None,
+            workflow_stage=product.workflow_stage,
+            created_by_id=session.get('user_id'),
+            label=label
+        )
+        db.session.add(version)
+        db.session.flush()
+        print(f"📸 Version {next_num} saved for product {product.id}: {label}")
+    except Exception as e:
+        print(f"❌ Failed to save version: {e}")
+
+
+def diff_and_log(product_id, old_data, new_data, prefix=''):
+    """Compare two dicts recursively and log field-level changes."""
+    user_id = session.get('user_id')
+    if old_data is None: old_data = {}
+    if new_data is None: new_data = {}
+    if not isinstance(old_data, dict) or not isinstance(new_data, dict):
+        if old_data != new_data:
+            try:
+                entry = FieldChangeLog(
+                    product_id=product_id,
+                    user_id=user_id,
+                    field_name=prefix or 'root',
+                    old_value=json.dumps(old_data, default=str)[:500],
+                    new_value=json.dumps(new_data, default=str)[:500]
+                )
+                db.session.add(entry)
+            except Exception as e:
+                print(f"Diff log error: {e}")
+        return
+    
+    all_keys = set(list(old_data.keys()) + list(new_data.keys()))
+    for key in all_keys:
+        field = f"{prefix}.{key}" if prefix else key
+        old_val = old_data.get(key)
+        new_val = new_data.get(key)
+        if isinstance(old_val, dict) and isinstance(new_val, dict):
+            diff_and_log(product_id, old_val, new_val, prefix=field)
+        elif old_val != new_val:
+            try:
+                entry = FieldChangeLog(
+                    product_id=product_id,
+                    user_id=user_id,
+                    field_name=field,
+                    old_value=json.dumps(old_val, default=str)[:500] if old_val is not None else None,
+                    new_value=json.dumps(new_val, default=str)[:500] if new_val is not None else None
+                )
+                db.session.add(entry)
+            except Exception as e:
+                print(f"Diff log error: {e}")
+
+
 # ================= ROUTES =================
 
 @app.route('/')
 def login():
+    if session.get('user_id'):
+        role = session.get('role')
+        if role == 'admin': return redirect(url_for('admin_users'))
+        if role == 'marketing': return redirect(url_for('dashboard_marketing'))
+        if role == 'director': return redirect(url_for('dashboard_director'))
+        if role == 'web': return redirect(url_for('dashboard_web'))
     return render_template('login.html')
 
-@app.route('/set_role/<role>')
-def set_role(role):
-    session['role'] = role
-    if role == 'marketing': return redirect(url_for('dashboard_marketing'))
-    elif role == 'director': return redirect(url_for('dashboard_director'))
-    elif role == 'web': return redirect(url_for('dashboard_web'))
+@app.route('/login', methods=['POST'])
+def login_post():
+    email = request.form.get('email', '').strip().lower()
+    password = request.form.get('password', '')
+    
+    user = User.query.filter_by(email=email).first()
+    if not user or not user.check_password(password):
+        flash('Invalid email or password.', 'error')
+        return redirect(url_for('login'))
+    if not user.is_active:
+        flash('Your account has been deactivated. Contact admin.', 'error')
+        return redirect(url_for('login'))
+    
+    session['user_id'] = user.id
+    session['username'] = user.display_name or user.username
+    session['role'] = user.role
+    
+    if user.role == 'admin': return redirect(url_for('admin_users'))
+    if user.role == 'marketing': return redirect(url_for('dashboard_marketing'))
+    if user.role == 'director': return redirect(url_for('dashboard_director'))
+    if user.role == 'web': return redirect(url_for('dashboard_web'))
     return redirect(url_for('login'))
 
 @app.route('/logout')
@@ -698,20 +810,27 @@ def review_pis_marketing(product_id):
         updated_data['warranty_service']['period'] = request.form.get('warranty_period')
         updated_data['warranty_service']['coverage'] = request.form.get('warranty_coverage')
         
+        # --- VERSION SNAPSHOT & DIFF before saving ---
+        old_pis = copy.deepcopy(product.pis_data) if product.pis_data else {}
         product.pis_data = updated_data
         
-        # CRITICAL: Flag the JSON field as modified so SQLAlchemy saves it
+        # CRITICAL: Flag the json field as modified so SQLAlchemy saves it
         from sqlalchemy.orm.attributes import flag_modified
         flag_modified(product, 'pis_data')
         
+        # Log field-level diffs
+        diff_and_log(product.id, old_pis, updated_data, prefix='pis_data')
+        
         if request.form.get('action') == 'submit_director':
+            save_version_snapshot(product, label='Before submission to Director')
             product.workflow_stage = 'pending_director_pis'
-            log_event(product.id, 'Marketing Team', 'Submitted to Director', 'PIS draft submitted for review.', 'waiting')
+            log_event(product.id, get_current_username(), 'Submitted to Director', 'PIS draft submitted for review.', 'waiting')
             flash("Submitted to Director")
         else:
+            save_version_snapshot(product, label='Draft saved')
             if product.workflow_stage == 'marketing_draft':
                 product.workflow_stage = 'marketing_in_progress'
-            log_event(product.id, 'Marketing Team', 'Draft Updated', 'Marketing team saved changes.', 'neutral')
+            log_event(product.id, get_current_username(), 'Draft Updated', 'Marketing team saved changes.', 'neutral')
             flash("Saved ")
             
         db.session.commit()
@@ -798,7 +917,8 @@ def review_director_pis(product_id):
             product.workflow_stage = 'marketing_changes_requested'
             
             log_desc = f"Director requested changes on {len(new_revisions)} sections."
-            log_event(product.id, 'Director', 'Changes Requested', log_desc, 'action')
+            save_version_snapshot(product, label='Before director change request')
+            log_event(product.id, get_current_username(), 'Changes Requested', log_desc, 'action')
 
         elif action == 'approve':
             print("\n" + "="*80)
@@ -854,7 +974,8 @@ def review_director_pis(product_id):
             
             product.workflow_stage = 'ready_for_web'
             product.revision_data = None
-            log_event(product.id, 'Director', 'PIS Approved', 'Director approved the PIS content and initialized Specsheet.', 'success')
+            log_event(product.id, get_current_username(), 'PIS Approved', 'Director approved the PIS content and initialized Specsheet.', 'success')
+            save_version_snapshot(product, label='PIS Approved - SpecSheet generated')
             
         db.session.commit()
         return redirect(url_for('dashboard_director'))
@@ -891,7 +1012,8 @@ def create_specsheet(product_id):
     if request.method == 'POST':
         if request.form.get('action') == 'submit_director':
             product.workflow_stage = 'pending_director_spec'
-            log_event(product.id, 'Web Team', 'Submitted SpecSheet', 'SpecSheet submitted to Director.', 'waiting')
+            save_version_snapshot(product, label='SpecSheet submitted to Director')
+            log_event(product.id, get_current_username(), 'Submitted SpecSheet', 'SpecSheet submitted to Director.', 'waiting')
         else:
             if product.workflow_stage == 'ready_for_web':
                 product.workflow_stage = 'specsheet_draft'
@@ -1502,15 +1624,155 @@ def api_remove_forbidden_word():
     return json.dumps({"ok": True, "words": data.get(category, [])}), 200, {'Content-Type': 'application/json'}
 
 
+# ================= ADMIN: USER MANAGEMENT =================
+
+@app.route('/admin/users')
+def admin_users():
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('admin_users.html', users=users)
+
+
+@app.route('/api/admin/users', methods=['POST'])
+def api_create_user():
+    if session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    data = request.get_json(force=True)
+    username = data.get('username', '').strip().lower()
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    role = data.get('role', 'marketing')
+    display_name = data.get('display_name', '').strip()
+    
+    if not username or not email or not password:
+        return jsonify({"error": "Username, email and password are required"}), 400
+    
+    if User.query.filter((User.username == username) | (User.email == email)).first():
+        return jsonify({"error": "Username or email already exists"}), 400
+    
+    user = User(
+        username=username,
+        email=email,
+        role=role,
+        display_name=display_name or username,
+        is_active=True
+    )
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    
+    return jsonify({"ok": True, "id": user.id, "message": f"User {username} created"})
+
+
+@app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+def api_update_user(user_id):
+    if session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    user = User.query.get_or_404(user_id)
+    data = request.get_json(force=True)
+    
+    if 'display_name' in data:
+        user.display_name = data['display_name'].strip()
+    if 'role' in data and data['role'] in ('admin', 'marketing', 'director', 'web'):
+        user.role = data['role']
+    if 'is_active' in data:
+        user.is_active = bool(data['is_active'])
+    if 'password' in data and data['password']:
+        user.set_password(data['password'])
+    
+    db.session.commit()
+    return jsonify({"ok": True, "message": f"User {user.username} updated"})
+
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+def api_delete_user(user_id):
+    if session.get('role') != 'admin':
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    user = User.query.get_or_404(user_id)
+    if user.id == session.get('user_id'):
+        return jsonify({"error": "Cannot delete your own account"}), 400
+    
+    user.is_active = False  # soft-delete
+    db.session.commit()
+    return jsonify({"ok": True, "message": f"User {user.username} deactivated"})
+
+
+# ================= VERSION HISTORY API =================
+
+@app.route('/api/product/<int:product_id>/versions')
+def api_product_versions(product_id):
+    versions = ProductVersion.query.filter_by(product_id=product_id).order_by(ProductVersion.version_num.desc()).all()
+    result = []
+    for v in versions:
+        result.append({
+            "id": v.id,
+            "version_num": v.version_num,
+            "label": v.label,
+            "workflow_stage": v.workflow_stage,
+            "created_by": v.created_by.display_name if v.created_by else "System",
+            "created_at": v.created_at.strftime('%d %b %Y, %H:%M')
+        })
+    return jsonify(result)
+
+
+@app.route('/api/product/<int:product_id>/versions/<int:version_id>/restore', methods=['POST'])
+def api_restore_version(product_id, version_id):
+    product = Product.query.get_or_404(product_id)
+    version = ProductVersion.query.get_or_404(version_id)
+    
+    if version.product_id != product_id:
+        return jsonify({"error": "Version does not belong to this product"}), 400
+    
+    # Save current state as a snapshot before restoring
+    save_version_snapshot(product, label=f"Before restore to v{version.version_num}")
+    
+    # Restore
+    product.pis_data = copy.deepcopy(version.pis_data)
+    product.spec_data = copy.deepcopy(version.spec_data)
+    product.revision_data = copy.deepcopy(version.revision_data)
+    product.workflow_stage = version.workflow_stage
+    
+    db.session.commit()
+    
+    log_event(product.id, get_current_username(), 'Version Restored', 
+              f'Restored to version {version.version_num}: {version.label}', 'action')
+    
+    return jsonify({"ok": True, "message": f"Restored to version {version.version_num}"})
+
+
+# ================= FIELD CHANGE LOG API =================
+
+@app.route('/api/product/<int:product_id>/changelog')
+def api_product_changelog(product_id):
+    changes = FieldChangeLog.query.filter_by(product_id=product_id).order_by(FieldChangeLog.timestamp.desc()).limit(100).all()
+    result = []
+    for c in changes:
+        result.append({
+            "id": c.id,
+            "field_name": c.field_name,
+            "old_value": c.old_value,
+            "new_value": c.new_value,
+            "user": c.user.display_name if c.user else "System",
+            "timestamp": c.timestamp.strftime('%d %b %Y, %H:%M:%S')
+        })
+    return jsonify(result)
+
+
+# ================= PURGE =================
+
 @app.route('/purge_all_data', methods=['POST'])
 def purge_all_data():
     """Nuclear option: Clear all products, history, and uploaded images."""
     try:
-        # 1. Clear Database Tables
+        FieldChangeLog.query.delete()
+        ProductVersion.query.delete()
         ProductHistory.query.delete()
         Product.query.delete()
         
-        # 2. Clear Uploads Folder
         upload_folder = app.config['UPLOAD_FOLDER']
         if os.path.exists(upload_folder):
             import shutil
@@ -1531,14 +1793,10 @@ def purge_all_data():
         db.session.rollback()
         flash(f"Error purging data: {str(e)}", "error")
     
-    # Redirect back to the dashboard they came from
     referrer = request.referrer or url_for('login')
     return redirect(referrer)
 
 
 if __name__ == '__main__':
-    # Use PORT from environment (default to 5000)
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
-    
-    
+    app.run(host='0.0.0.0', port=port, debug=False)
