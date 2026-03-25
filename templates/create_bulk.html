@@ -99,26 +99,77 @@
             </div>
 
             <!-- 3. PRODUCT FILTER SECTION -->
-            <div class="space-y-4 pt-2">
+            <div class="space-y-4 pt-2" x-data="productFilter()">
                 <div class="flex items-center justify-between">
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">
                         Products to Extract <span class="text-slate-300 font-normal lowercase">(Optional)</span>
                     </label>
-                    <span class="text-[10px] text-slate-400 font-medium">One product per line</span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest transition-colors"
+                        :class="items.length > 0 ? 'text-red-500 bg-red-50 px-2.5 py-1 rounded-full border border-red-100' : 'text-slate-400'"
+                        x-text="items.length > 0 ? items.length + ' product' + (items.length > 1 ? 's' : '') : 'Add products below'"></span>
                 </div>
-                <div class="relative">
-                    <div class="absolute top-4 left-0 pl-4 flex items-start pointer-events-none text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                        </svg>
+
+                <!-- Hidden input to send data to backend -->
+                <input type="hidden" name="product_filter" :value="items.join('\n')">
+
+                <!-- Product Items Container -->
+                <div class="min-h-[60px] bg-slate-50/80 border border-slate-100 rounded-2xl p-3 transition-all"
+                    :class="items.length === 0 && 'border-dashed'">
+
+                    <!-- Empty State -->
+                    <div x-show="items.length === 0" class="flex flex-col items-center justify-center py-5 text-center">
+                        <div class="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mb-2">
+                            <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                            </svg>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium">No products added yet — extracts all by default</p>
                     </div>
-                    <textarea name="product_filter" rows="4"
-                        placeholder="Samsung RF28R7351SR&#10;LG LRMVS3006S&#10;Whirlpool WRS325SDHZ"
-                        class="block w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-red-500/5 focus:border-red-400 outline-none transition-all text-sm resize-none"></textarea>
+
+                    <!-- Product Chips -->
+                    <div x-show="items.length > 0" class="flex flex-wrap gap-2">
+                        <template x-for="(item, index) in items" :key="index">
+                            <div class="group flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 shadow-sm hover:shadow-md hover:border-red-200 transition-all duration-200 animate-scale-up">
+                                <div class="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                                    <span class="text-[9px] font-black text-red-500" x-text="index + 1"></span>
+                                </div>
+                                <span class="text-sm font-semibold text-slate-800 select-none" x-text="item"></span>
+                                <button type="button" @click="removeItem(index)"
+                                    class="w-5 h-5 rounded-md flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all ml-1 shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
                 </div>
+
+                <!-- Add Product Input -->
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input type="text" x-model="newItem" @keydown.enter.prevent="addItem()"
+                            placeholder="Type a product name or model number..."
+                            class="block w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-red-500/5 focus:border-red-400 outline-none transition-all text-sm">
+                    </div>
+                    <button type="button" @click="addItem()"
+                        class="px-5 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-red-600 active:scale-95 transition-all duration-200 flex items-center gap-2 shrink-0 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        <span class="text-xs uppercase tracking-wider">Add</span>
+                    </button>
+                </div>
+
                 <p class="text-[10px] text-slate-400 font-medium pl-1">
-                    Specify product names or model numbers to extract only those items. Leave empty to extract all
+                    Add product names or model numbers to extract only those items. Leave empty to extract all
                     products found.
                 </p>
             </div>
@@ -353,6 +404,24 @@
 </style>
 
 <script>
+    // ===== Product Filter Component =====
+    function productFilter() {
+        return {
+            items: [],
+            newItem: '',
+            addItem() {
+                const val = this.newItem.trim();
+                if (val && !this.items.includes(val)) {
+                    this.items.push(val);
+                    this.newItem = '';
+                }
+            },
+            removeItem(index) {
+                this.items.splice(index, 1);
+            }
+        }
+    }
+
     // ===== Managed File List =====
     const docInput = document.getElementById('ai_document');
     const filePreviewArea = document.getElementById('file-preview-area');
