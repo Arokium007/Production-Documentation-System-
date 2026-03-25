@@ -237,7 +237,7 @@ def dashboard_marketing():
 
 @app.route('/dashboard/marketing/history')
 def history_marketing():
-    if session.get('role') != 'marketing': return redirect(url_for('login'))
+    if not session.get('role'): return redirect(url_for('login'))
     
     # Fetch all products ordered by newest first
     all_products = Product.query.order_by(Product.created_at.desc()).all()
