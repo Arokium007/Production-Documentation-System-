@@ -312,27 +312,12 @@ def dashboard_web():
         "in_process": sum(1 for p in tasks if p.workflow_stage == "specsheet_draft"),
     }
 
-    # ---- LOAD PRODUCT CATEGORIES FOR FORBIDDEN WORDS SECTION ----
-    from utils.category_classifier import load_categories
-    raw_categories = load_categories()
-    # Build tree: { cat_A: { cat_B: [cat_C, ...] } }
-    category_tree = {}
-    for cat in raw_categories:
-        a, b, c = cat['cat_A'], cat['cat_B'], cat['cat_C']
-        if a not in category_tree:
-            category_tree[a] = {}
-        if b not in category_tree[a]:
-            category_tree[a][b] = []
-        if c not in category_tree[a][b]:
-            category_tree[a][b].append(c)
-
     # ---- RENDER DASHBOARD ----
     return render_template(
         "dashboard_web.html",
         tasks=tasks,                 # used only for metrics/debug
         products_json=products_json, # used by Alpine (IMPORTANT)
-        metrics=metrics,
-        category_tree=category_tree
+        metrics=metrics
     )
 
 
@@ -345,6 +330,26 @@ def web_archive():
     finalized_products = Product.query.filter_by(workflow_stage='finalized').order_by(Product.created_at.desc()).all()
     
     return render_template('archive_web.html', products=finalized_products)
+
+
+@app.route('/dashboard/web/forbidden-words')
+def web_forbidden_words():
+    if session.get('role') != 'web':
+        return redirect(url_for('login'))
+    
+    from utils.category_classifier import load_categories
+    raw_categories = load_categories()
+    category_tree = {}
+    for cat in raw_categories:
+        a, b, c = cat['cat_A'], cat['cat_B'], cat['cat_C']
+        if a not in category_tree:
+            category_tree[a] = {}
+        if b not in category_tree[a]:
+            category_tree[a][b] = []
+        if c not in category_tree[a][b]:
+            category_tree[a][b].append(c)
+    
+    return render_template('forbidden_words.html', category_tree=category_tree)
 
 
 @app.route('/create', methods=['GET', 'POST'])
