@@ -874,6 +874,62 @@
                     </div>
                 </div>
 
+                <!-- Forbidden Words Quick-Add -->
+                <div class="section-card p-5" x-data="forbiddenQuickAdd()" x-init="init()">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1 bg-red-50 text-red-500 rounded-md">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                            </div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Forbidden Words</p>
+                        </div>
+                        <a href="{{ url_for('web_forbidden_words') }}" class="text-[10px] text-indigo-600 hover:text-indigo-700 font-bold">
+                            Manage All →
+                        </a>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mb-3">Words blocked from AI-generated content. Add here or use the <a href="{{ url_for('web_forbidden_words') }}" class="text-indigo-600 font-bold hover:underline">full manager</a>.</p>
+                    
+                    <!-- Category Select -->
+                    <select x-model="selectedCategory" class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg mb-2 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50">
+                        <option value="">Select Category...</option>
+                        <template x-for="cat in categories" :key="cat">
+                            <option :value="cat" x-text="cat"></option>
+                        </template>
+                    </select>
+
+                    <!-- Input + Add -->
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" placeholder="Type a word..." x-model="newWord"
+                            @keydown.enter.prevent="addWord()"
+                            :disabled="!selectedCategory"
+                            class="flex-1 px-3 py-2 text-xs bg-white border border-gray-200 rounded-lg focus:border-indigo-300 focus:ring-2 focus:ring-indigo-50 outline-none transition-all placeholder-gray-400 disabled:opacity-40">
+                        <button @click="addWord()" :disabled="!selectedCategory || !newWord.trim()"
+                            class="px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
+                            Block
+                        </button>
+                    </div>
+
+                    <!-- Current Words for Selected Category -->
+                    <template x-if="selectedCategory && words[selectedCategory] && words[selectedCategory].length > 0">
+                        <div class="flex flex-wrap gap-1.5 pt-1">
+                            <template x-for="word in words[selectedCategory]" :key="word">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-700 rounded-md text-[10px] font-semibold border border-red-100">
+                                    <span x-text="word"></span>
+                                    <button @click="removeWord(word)" class="text-red-400 hover:text-red-700 text-xs leading-none">✕</button>
+                                </span>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- Counter -->
+                    <div class="mt-2 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                        <span class="text-[10px] text-gray-400 font-bold" x-text="totalWords + ' total words blocked'"></span>
+                    </div>
+                </div>
+
             </div>
 
         </div>
@@ -1453,6 +1509,64 @@
     `;
 
         form.submit();
+    }
+
+    function forbiddenQuickAdd() {
+        return {
+            selectedCategory: '',
+            newWord: '',
+            words: {},
+            categories: [],
+            
+            get totalWords() {
+                let count = 0;
+                for (const cat in this.words) count += this.words[cat].length;
+                return count;
+            },
+            
+            async init() {
+                try {
+                    const res = await fetch('/api/forbidden_words');
+                    this.words = await res.json();
+                    // Collect all unique categories that have words
+                    const allCats = new Set(Object.keys(this.words));
+                    this.categories = [...allCats].sort();
+                } catch (e) { this.words = {}; this.categories = []; }
+            },
+            
+            async addWord() {
+                const word = this.newWord.trim().toLowerCase();
+                if (!word || !this.selectedCategory) return;
+                try {
+                    const res = await fetch('/api/forbidden_words', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ category: this.selectedCategory, word })
+                    });
+                    const data = await res.json();
+                    if (data.ok) {
+                        this.words[this.selectedCategory] = data.words;
+                        this.newWord = '';
+                        if (!this.categories.includes(this.selectedCategory)) {
+                            this.categories.push(this.selectedCategory);
+                            this.categories.sort();
+                        }
+                    }
+                } catch (e) { console.error(e); }
+            },
+            
+            async removeWord(word) {
+                try {
+                    const res = await fetch('/api/forbidden_words', {
+                        method: 'DELETE',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ category: this.selectedCategory, word })
+                    });
+                    const data = await res.json();
+                    if (data.ok) this.words[this.selectedCategory] = data.words;
+                } catch (e) { console.error(e); }
+            }
+        };
     }
 </script>
 
