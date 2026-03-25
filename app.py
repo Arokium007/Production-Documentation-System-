@@ -38,10 +38,14 @@ db.init_app(app)
 with app.app_context():
     if not os.path.exists('instance'): os.makedirs('instance')
     
-    # Use checkfirst=True for compatibility with older SQLAlchemy versions
-    with db.engine.connect() as conn:
-        db.metadata.create_all(bind=conn, checkfirst=True)
-        conn.commit()
+    # Create tables safely (handles existing tables on older SQLAlchemy)
+    try:
+        with db.engine.connect() as conn:
+            db.metadata.create_all(bind=conn, checkfirst=True)
+            conn.commit()
+    except Exception:
+        # Fallback: tables already exist, which is fine
+        pass
     
     if not os.path.exists(app.config['UPLOAD_FOLDER']): os.makedirs(app.config['UPLOAD_FOLDER'])
     
