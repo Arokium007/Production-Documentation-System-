@@ -5,16 +5,31 @@
      x-data='{ 
         modalOpen: false, 
         selectedProduct: null, 
+        activeTab: "timeline",
+        changelogFilter: "",
         products: {{ products_json | safe }},
+        get filteredChangelog() {
+            if (!this.selectedProduct || !this.selectedProduct.changelog) return [];
+            if (!this.changelogFilter.trim()) return this.selectedProduct.changelog;
+            const q = this.changelogFilter.trim().toLowerCase();
+            return this.selectedProduct.changelog.filter(c => 
+                c.field_name.toLowerCase().includes(q) || 
+                c.user.toLowerCase().includes(q) ||
+                (c.old_value || "").toLowerCase().includes(q) ||
+                (c.new_value || "").toLowerCase().includes(q)
+            );
+        },
         openTimeline(product) {
             this.selectedProduct = product;
+            this.activeTab = "timeline";
+            this.changelogFilter = "";
             this.modalOpen = true;
-            document.body.classList.add("overflow-hidden"); // Prevent background scroll
+            document.body.classList.add("overflow-hidden");
         },
         closeModal() {
             this.modalOpen = false;
             document.body.classList.remove("overflow-hidden");
-            setTimeout(() => this.selectedProduct = null, 300); // Clear after animation
+            setTimeout(() => this.selectedProduct = null, 300);
         }
      }'>
 
@@ -132,55 +147,132 @@
                         </div>
                     </div>
                 </template>
+
+                <!-- Tabs -->
+                <div class="flex gap-1 mt-5 bg-gray-100 p-1 rounded-xl">
+                    <button @click="activeTab = 'timeline'" 
+                        :class="activeTab === 'timeline' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                        class="flex-1 px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Activity Timeline
+                        <span class="bg-gray-100 px-1.5 py-0.5 rounded text-[10px]" x-text="selectedProduct?.timeline?.length || 0"></span>
+                    </button>
+                    <button @click="activeTab = 'changelog'" 
+                        :class="activeTab === 'changelog' ? 'bg-white text-slate-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                        class="flex-1 px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        Change Log
+                        <span class="bg-gray-100 px-1.5 py-0.5 rounded text-[10px]" x-text="selectedProduct?.changelog?.length || 0"></span>
+                    </button>
+                </div>
             </div>
 
             <div class="p-8 overflow-y-auto flex-1 smooth-scroll-area bg-gray-50/50">
-                <h4 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    PIS Journey Timeline
-                </h4>
                 
-                <template x-if="selectedProduct">
-                    <div class="ml-4 border-l-2 border-gray-200 space-y-8 pl-8 relative">
-                        
-                        <template x-for="(event, index) in selectedProduct.timeline" :key="index">
-                        <div class="relative animate-fade-in-up">
+                <!-- TIMELINE TAB -->
+                <div x-show="activeTab === 'timeline'">
+                    <template x-if="selectedProduct">
+                        <div class="ml-4 border-l-2 border-gray-200 space-y-8 pl-8 relative">
                             
-                            <div class="absolute -left-[41px] top-0 p-2 rounded-full border-2 bg-white z-10"
-                                 :class="{
-                                    'border-gray-200 text-gray-400': event.status === 'neutral',
-                                    'border-blue-200 text-blue-600 shadow-sm shadow-blue-100': event.status === 'waiting',
-                                    'border-red-200 text-red-600 shadow-sm shadow-red-100': event.status === 'action',
-                                    'border-green-200 text-green-600 shadow-sm shadow-green-100': event.status === 'success'
-                                 }">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="event.icon"/>
-                                </svg>
-                            </div>
-
-                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative group hover:border-gray-300 transition-colors">
-                                <div class="w-4 h-4 bg-white border-b border-l border-gray-100 absolute top-4 -left-2.5 transform rotate-45 group-hover:border-gray-300 transition-colors"></div>
+                            <template x-for="(event, index) in selectedProduct.timeline" :key="index">
+                            <div class="relative animate-fade-in-up">
                                 
-                                <div class="flex justify-between items-start mb-2">
-                                    <h5 class="font-bold text-gray-900 text-lg" x-text="event.title"></h5>
-                                    <div class="text-right flex flex-col items-end">
-                                        <div class="font-bold text-gray-900 text-sm" x-text="event.date"></div>
-                                        <div class="text-xs text-gray-400" x-text="event.time"></div>
+                                <div class="absolute -left-[41px] top-0 p-2 rounded-full border-2 bg-white z-10"
+                                     :class="{
+                                        'border-gray-200 text-gray-400': event.status === 'neutral',
+                                        'border-blue-200 text-blue-600 shadow-sm shadow-blue-100': event.status === 'waiting',
+                                        'border-red-200 text-red-600 shadow-sm shadow-red-100': event.status === 'action',
+                                        'border-green-200 text-green-600 shadow-sm shadow-green-100': event.status === 'success'
+                                     }">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="event.icon"/>
+                                    </svg>
+                                </div>
+
+                                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative group hover:border-gray-300 transition-colors">
+                                    <div class="w-4 h-4 bg-white border-b border-l border-gray-100 absolute top-4 -left-2.5 transform rotate-45 group-hover:border-gray-300 transition-colors"></div>
+                                    
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h5 class="font-bold text-gray-900 text-lg" x-text="event.title"></h5>
+                                        <div class="text-right flex flex-col items-end">
+                                            <div class="font-bold text-gray-900 text-sm" x-text="event.date"></div>
+                                            <div class="text-xs text-gray-400" x-text="event.time"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="text-gray-600 mb-3 text-sm leading-relaxed" x-text="event.description"></p>
+                                    
+                                    <div class="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        <span x-text="event.actor"></span>
                                     </div>
                                 </div>
-                                
-                                <p class="text-gray-600 mb-3 text-sm leading-relaxed" x-text="event.description"></p>
-                                
-                                <div class="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                    <span x-text="event.actor"></span>
-                                </div>
                             </div>
+                            </template>
+                            
+                            <!-- Empty state -->
+                            <template x-if="!selectedProduct?.timeline?.length">
+                                <div class="text-center py-10 text-gray-400">
+                                    <p class="text-sm font-medium">No timeline events recorded yet.</p>
+                                </div>
+                            </template>
                         </div>
-                        </template>
-                        
+                    </template>
+                </div>
+
+                <!-- CHANGE LOG TAB -->
+                <div x-show="activeTab === 'changelog'">
+                    <!-- Search -->
+                    <div class="mb-4">
+                        <div class="relative">
+                            <svg class="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <input x-model="changelogFilter" type="text" placeholder="Filter by field or user..."
+                                class="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 focus:border-gray-300 rounded-xl text-xs font-medium transition-all outline-none placeholder-gray-400">
+                        </div>
                     </div>
-                </template>
+
+                    <template x-if="selectedProduct">
+                        <div class="space-y-2">
+                            <template x-for="c in filteredChangelog" :key="c.field_name + c.timestamp">
+                                <div class="bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-all">
+                                    <div class="flex items-start justify-between gap-2 mb-2">
+                                        <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold uppercase tracking-wide truncate max-w-[220px]" x-text="c.field_name"></span>
+                                        <span class="text-[10px] text-gray-400 whitespace-nowrap" x-text="c.timestamp"></span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                                        <div>
+                                            <p class="font-bold text-gray-400 uppercase tracking-wider mb-0.5 text-[9px]">Old Value</p>
+                                            <div class="bg-red-50 border border-red-100 rounded-lg px-2.5 py-1.5 text-red-700 break-words max-h-16 overflow-y-auto font-mono text-[10px]"
+                                                x-text="c.old_value || '—'"></div>
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-gray-400 uppercase tracking-wider mb-0.5 text-[9px]">New Value</p>
+                                            <div class="bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1.5 text-emerald-700 break-words max-h-16 overflow-y-auto font-mono text-[10px]"
+                                                x-text="c.new_value || '—'"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 mt-2 text-[10px] text-gray-400">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        <span x-text="c.user" class="font-bold"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Empty state -->
+                            <template x-if="!selectedProduct?.changelog?.length">
+                                <div class="text-center py-10 text-gray-400">
+                                    <div class="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                    </div>
+                                    <p class="text-sm font-medium">No field-level changes recorded yet.</p>
+                                    <p class="text-xs mt-1">Changes will appear here as users edit product data.</p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
             </div>
 
         </div>

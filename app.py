@@ -242,85 +242,87 @@ def history_marketing():
     # Fetch all products ordered by newest first
     all_products = Product.query.order_by(Product.created_at.desc()).all()
     
-    # --- SIMULATION BLOCK: GENERATE DEMO PIS TIMELINE DATA ---
-    # In a real app, you would query a 'ProductHistory' table here.
-    # We are generating this on the fly so the frontend template works.
+    # Build timeline from REAL ProductHistory records + FieldChangeLog data
     products_with_history = []
     
+    # Icon map for different event types
+    ICON_MAP = {
+        'Created': 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+        'Submitted': 'M12 19l9 2-9-18-9 18 9-2zm0 0v-8',
+        'Approved': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+        'Changes': 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+        'Updated': 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
+        'Generated': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+        'Restored': 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
+    }
+    
+    def get_icon(title):
+        for key, icon in ICON_MAP.items():
+            if key.lower() in title.lower():
+                return icon
+        return 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+    
     for p in all_products:
-        timeline = []
+        # Get real history events from ProductHistory
+        history_events = ProductHistory.query.filter_by(product_id=p.id).order_by(ProductHistory.timestamp.desc()).all()
         
-        # 1. Creation Event (Always exists)
-        timeline.append({
-            'date': p.created_at.strftime('%Y-%m-%d'),
-            'time': p.created_at.strftime('%H:%M'),
-            'title': 'PIS Draft Created',
-            'description': 'Initial product data imported and draft started.',
-            'actor': 'Marketing Team',
-            'status': 'neutral', # neutral, waiting, action, success
-            'icon': 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
-        })
-
-        # 2. Simulate intermediate steps based on current stage
-        stage = p.workflow_stage
-
-        if 'pending_director' in stage or 'requested' in stage or 'finalized' in stage:
-             timeline.append({
-                'date': p.created_at.strftime('%Y-%m-%d'), # Using same date for demo
-                'time': (p.created_at + timedelta(hours=2)).strftime('%H:%M'),
-                'title': 'Submitted to Director',
-                'description': 'PIS draft sent for approval.',
-                'actor': 'Marketing Team',
-                'status': 'waiting',
-                'icon': 'M12 19l9 2-9-18-9 18 9-2zm0 0v-8'
+        timeline = []
+        for event in history_events:
+            timeline.append({
+                'date': event.timestamp.strftime('%Y-%m-%d'),
+                'time': event.timestamp.strftime('%H:%M'),
+                'title': event.action,
+                'description': event.details or '',
+                'actor': event.actor,
+                'status': event.status_class or 'neutral',
+                'icon': get_icon(event.action)
             })
-
-        if 'changes_requested' in stage and p.director_pis_comments:
-             timeline.append({
+        
+        # If no history exists, add a creation event from product date
+        if not timeline:
+            timeline.append({
                 'date': p.created_at.strftime('%Y-%m-%d'),
-                'time': (p.created_at + timedelta(hours=4)).strftime('%H:%M'),
-                'title': 'Changes Requested by Director',
-                'description': f'Feedback: "{p.director_pis_comments}"',
-                'actor': 'Director',
-                'status': 'action',
-                'icon': 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                'time': p.created_at.strftime('%H:%M'),
+                'title': 'PIS Draft Created',
+                'description': 'Product data imported.',
+                'actor': 'System',
+                'status': 'neutral',
+                'icon': ICON_MAP['Created']
             })
-
-        # 3. Final PIS Approval State
-        # We check if it passed the PIS stage. 'finalized', 'ready_for_web', 'specsheet_draft' etc mean PIS is done.
+        
+        # Get field-level change log
+        field_changes = FieldChangeLog.query.filter_by(product_id=p.id).order_by(FieldChangeLog.timestamp.desc()).limit(50).all()
+        
+        changelog = []
+        for c in field_changes:
+            changelog.append({
+                'field_name': c.field_name,
+                'old_value': str(c.old_value)[:120] if c.old_value else '',
+                'new_value': str(c.new_value)[:120] if c.new_value else '',
+                'user': c.user,
+                'timestamp': c.timestamp.strftime('%Y-%m-%d %H:%M')
+            })
+        
+        # Determine current PIS status
+        stage = p.workflow_stage or ''
         pis_approved_stages = ['ready_for_web', 'specsheet_draft', 'pending_director_spec', 'web_changes_requested', 'finalized']
-        if any(s in stage for s in pis_approved_stages):
-             timeline.append({
-                'date': p.created_at.strftime('%Y-%m-%d'),
-                'time': (p.created_at + timedelta(days=1)).strftime('%H:%M'),
-                'title': 'PIS Approved',
-                'description': 'Director approved the product information sheet.',
-                'actor': 'Director',
-                'status': 'success',
-                'icon': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-            })
-
-        # Determine current PIS status label for the main table
         current_pis_status = 'Draft'
         if 'pending_director_pis' in stage: current_pis_status = 'Pending Review'
         elif 'marketing_changes_requested' in stage: current_pis_status = 'Changes Requested'
         elif any(s in stage for s in pis_approved_stages): current_pis_status = 'Approved'
-
+        
         products_with_history.append({
             'product': p,
             'pis_status': current_pis_status,
-            # Reverse timeline so newest event is at top
-            'timeline': timeline[::-1] 
+            'timeline': timeline,
+            'changelog': changelog
         })
-
-    # In production, you would pass the ID and fetch timeline via AJAX call instead of dumping it all here.
-    # We dump it here for the demo to work without extra API routes.
+    
     import json
     def default_converter(o):
         if isinstance(o, datetime): return o.strftime("%Y-%m-%d %H:%M:%S")
         return o.__dict__
 
-    # We need to serialize this data so Alpine.js can use it
     products_json = json.dumps([{
         'id': item['product'].id,
         'model_name': item['product'].model_name,
@@ -328,7 +330,8 @@ def history_marketing():
         'image_path': url_for('static', filename=item['product'].image_path) if item['product'].image_path else None,
         'pis_status': item['pis_status'],
         'created_date': item['product'].created_at.strftime('%Y-%m-%d'),
-        'timeline': item['timeline']
+        'timeline': item['timeline'],
+        'changelog': item['changelog']
     } for item in products_with_history])
     
     return render_template('history_marketing.html', products_json=products_json)
