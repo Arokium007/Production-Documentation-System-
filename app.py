@@ -271,11 +271,11 @@ def history_marketing():
             timeline.append({
                 'date': event.timestamp.strftime('%Y-%m-%d'),
                 'time': event.timestamp.strftime('%H:%M'),
-                'title': event.action,
-                'description': event.details or '',
+                'title': event.action_title,
+                'description': event.description or '',
                 'actor': event.actor,
-                'status': event.status_class or 'neutral',
-                'icon': get_icon(event.action)
+                'status': event.action_type or 'neutral',
+                'icon': get_icon(event.action_title)
             })
         
         # If no history exists, add a creation event from product date
