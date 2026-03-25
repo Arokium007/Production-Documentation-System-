@@ -312,12 +312,27 @@ def dashboard_web():
         "in_process": sum(1 for p in tasks if p.workflow_stage == "specsheet_draft"),
     }
 
+    # ---- LOAD PRODUCT CATEGORIES FOR FORBIDDEN WORDS SECTION ----
+    from utils.category_classifier import load_categories
+    raw_categories = load_categories()
+    # Build tree: { cat_A: { cat_B: [cat_C, ...] } }
+    category_tree = {}
+    for cat in raw_categories:
+        a, b, c = cat['cat_A'], cat['cat_B'], cat['cat_C']
+        if a not in category_tree:
+            category_tree[a] = {}
+        if b not in category_tree[a]:
+            category_tree[a][b] = []
+        if c not in category_tree[a][b]:
+            category_tree[a][b].append(c)
+
     # ---- RENDER DASHBOARD ----
     return render_template(
         "dashboard_web.html",
         tasks=tasks,                 # used only for metrics/debug
         products_json=products_json, # used by Alpine (IMPORTANT)
-        metrics=metrics
+        metrics=metrics,
+        category_tree=category_tree
     )
 
 
@@ -787,8 +802,14 @@ def review_director_pis(product_id):
             
             # --- Generate comprehensive specsheet data with AI (includes categories) ---
             try:
+                # Load ALL forbidden words (combined) since category isn't known yet
+                all_fw = load_forbidden_words()
+                combined_forbidden = list(set(w for words in all_fw.values() for w in words))
+                if combined_forbidden:
+                    print(f"🚫 Enforcing {len(combined_forbidden)} forbidden words across all categories")
+                
                 print("🤖 Calling generate_comprehensive_spec_data()...")
-                spec_data_generated = generate_comprehensive_spec_data(product.pis_data)
+                spec_data_generated = generate_comprehensive_spec_data(product.pis_data, forbidden_words=combined_forbidden)
                 
                 # Add technical specifications from PIS
                 spec_data_generated['technical_specifications'] = product.pis_data.get('technical_specifications', {})
@@ -1389,8 +1410,10 @@ def api_generate_specsheet(product_id):
         yield json.dumps({"progress": 50, "message": "Rewriting Customer Content..."}) + "\n"
         
         try:
-            # Generate comprehensive content
-            spec_data = generate_comprehensive_spec_data(product.pis_data)
+            # Generate comprehensive content with forbidden words enforcement
+            all_fw = load_forbidden_words()
+            combined_forbidden = list(set(w for words in all_fw.values() for w in words))
+            spec_data = generate_comprehensive_spec_data(product.pis_data, forbidden_words=combined_forbidden)
             
             yield json.dumps({"progress": 80, "message": "Optimizing SEO Metadata..."}) + "\n"
             
@@ -1409,6 +1432,69 @@ def api_generate_specsheet(product_id):
             yield json.dumps({"error": "AI Generation Failed. Please try again."}) + "\n"
 
     return Response(stream_with_context(generate()), mimetype='application/x-ndjson')
+
+
+# ================= FORBIDDEN WORDS API =================
+
+FORBIDDEN_WORDS_FILE = os.path.join(basedir, 'data', 'forbidden_words.json')
+
+def load_forbidden_words():
+    """Load forbidden words from JSON file."""
+    try:
+        with open(FORBIDDEN_WORDS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_forbidden_words(data):
+    """Save forbidden words to JSON file."""
+    os.makedirs(os.path.dirname(FORBIDDEN_WORDS_FILE), exist_ok=True)
+    with open(FORBIDDEN_WORDS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+def get_forbidden_words_for_category(category_3):
+    """Get forbidden words list for a specific cat_C category."""
+    data = load_forbidden_words()
+    return data.get(category_3, [])
+
+
+@app.route('/api/forbidden_words', methods=['GET'])
+def api_get_forbidden_words():
+    return json.dumps(load_forbidden_words()), 200, {'Content-Type': 'application/json'}
+
+
+@app.route('/api/forbidden_words', methods=['POST'])
+def api_add_forbidden_word():
+    body = request.get_json(force=True)
+    category = body.get('category', '').strip()
+    word = body.get('word', '').strip().lower()
+    if not category or not word:
+        return json.dumps({"error": "Category and word required"}), 400, {'Content-Type': 'application/json'}
+    
+    data = load_forbidden_words()
+    if category not in data:
+        data[category] = []
+    if word not in data[category]:
+        data[category].append(word)
+    save_forbidden_words(data)
+    return json.dumps({"ok": True, "words": data[category]}), 200, {'Content-Type': 'application/json'}
+
+
+@app.route('/api/forbidden_words', methods=['DELETE'])
+def api_remove_forbidden_word():
+    body = request.get_json(force=True)
+    category = body.get('category', '').strip()
+    word = body.get('word', '').strip().lower()
+    if not category or not word:
+        return json.dumps({"error": "Category and word required"}), 400, {'Content-Type': 'application/json'}
+    
+    data = load_forbidden_words()
+    if category in data and word in data[category]:
+        data[category].remove(word)
+        if not data[category]:
+            del data[category]
+    save_forbidden_words(data)
+    return json.dumps({"ok": True, "words": data.get(category, [])}), 200, {'Content-Type': 'application/json'}
 
 
 @app.route('/purge_all_data', methods=['POST'])

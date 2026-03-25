@@ -107,12 +107,46 @@ def generate_pis_data(file_paths, model_name, url_data):
     return safe_json_loads(response.text, fallback={})
 
 
-def generate_comprehensive_spec_data(pis_data):
-    """Generate comprehensive spec sheet data from PIS data."""
+def _scrub_forbidden_words(data, forbidden_words):
+    """Recursively scrub forbidden words from all string values in a dict/list."""
+    if isinstance(data, str):
+        for word in forbidden_words:
+            # Case-insensitive whole-word replacement
+            pattern = re.compile(r'\b' + re.escape(word) + r'\b', re.IGNORECASE)
+            data = pattern.sub('', data)
+        # Clean up double spaces and leading/trailing whitespace
+        data = re.sub(r'\s{2,}', ' ', data).strip()
+        return data
+    elif isinstance(data, list):
+        return [_scrub_forbidden_words(item, forbidden_words) for item in data]
+    elif isinstance(data, dict):
+        return {k: _scrub_forbidden_words(v, forbidden_words) for k, v in data.items()}
+    return data
+
+def generate_comprehensive_spec_data(pis_data, forbidden_words=None):
+    """Generate comprehensive spec sheet data from PIS data.
+    
+    Args:
+        pis_data: The PIS data dict.
+        forbidden_words: Optional list of words that must NOT appear in generated text.
+    """
     model = genai.GenerativeModel('models/gemini-flash-latest')
     
     # Extract sales arguments for strict prompt
     sales_arguments = pis_data.get('sales_arguments', [])
+    
+    # Build forbidden words instruction
+    forbidden_instruction = ""
+    if forbidden_words and len(forbidden_words) > 0:
+        words_list = ", ".join([f'"{w}"' for w in forbidden_words])
+        forbidden_instruction = f"""
+    
+    **FORBIDDEN WORDS — CRITICAL RULE**:
+    The following words/phrases are STRICTLY FORBIDDEN and MUST NOT appear anywhere in your output.
+    Do NOT use these words in any form (singular, plural, capitalized, etc.):
+    {words_list}
+    If you need to express a similar concept, use an alternative word or rephrase entirely.
+    """
     
     prompt = f"""
     You are a Senior Marketing Copywriter and SEO Specialist for J. Kalachand, Mauritius.
@@ -130,6 +164,7 @@ def generate_comprehensive_spec_data(pis_data):
     - Keep each output item concise and persuasive
     - Focus on customer benefits, not technical specs
     - **FACTUAL INTEGRITY**: Use ONLY the provided source data. Do NOT invent or hallucinate any details.
+    {forbidden_instruction}
 
     Also create:
     1. A detailed 3-4 paragraph customer-facing product description focused on lifestyle benefits and technical excellence.
@@ -169,6 +204,10 @@ def generate_comprehensive_spec_data(pis_data):
         ):
             print("⚠️ AI returned empty/invalid key_features, falling back to PIS sales_arguments")
             spec_data["key_features"] = sales_arguments
+        
+        # --- POST-PROCESSING: Scrub forbidden words from all text fields ---
+        if forbidden_words and len(forbidden_words) > 0:
+            spec_data = _scrub_forbidden_words(spec_data, forbidden_words)
         
         # ADD CATEGORY CLASSIFICATION
         print("\n" + "="*80)
