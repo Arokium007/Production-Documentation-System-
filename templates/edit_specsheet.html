@@ -440,17 +440,33 @@
                     {% endif %}
 
                     <div class="space-y-6">
-                        <div>
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5 block">Meta
-                                Title (Max 60 chars)</label>
+                        <div x-data="{ charCount: $refs.metaTitle ? $refs.metaTitle.value.length : 0 }">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">Meta
+                                    Title (Max 60 chars)</label>
+                                <span class="text-[11px] font-bold tabular-nums transition-colors"
+                                    :class="charCount > 55 ? 'text-red-500' : charCount > 40 ? 'text-green-500' : 'text-gray-400'"
+                                    x-text="charCount + ' / 60'"></span>
+                            </div>
                             <input type="text" name="seo_meta_title" value="{{ spec_data.seo.meta_title }}"
-                                class="input" maxlength="60" placeholder="Product Name | J. Kalachand Mauritius">
+                                class="input" maxlength="60" placeholder="Product Name | J. Kalachand Mauritius"
+                                x-ref="metaTitle"
+                                x-init="charCount = $refs.metaTitle.value.length"
+                                @input="charCount = $refs.metaTitle.value.length">
                         </div>
-                        <div>
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5 block">Meta
-                                Description (Max 160 chars)</label>
+                        <div x-data="{ charCount: $refs.metaDesc ? $refs.metaDesc.value.length : 0 }">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">Meta
+                                    Description (Max 160 chars)</label>
+                                <span class="text-[11px] font-bold tabular-nums transition-colors"
+                                    :class="charCount > 150 ? 'text-red-500' : charCount > 100 ? 'text-green-500' : 'text-gray-400'"
+                                    x-text="charCount + ' / 160'"></span>
+                            </div>
                             <textarea name="seo_meta_description" rows="3" class="textarea" maxlength="160"
-                                placeholder="Compelling description mentioning Mauritius location & delivery">{{ spec_data.seo.meta_description }}</textarea>
+                                placeholder="Compelling description mentioning Mauritius location & delivery"
+                                x-ref="metaDesc"
+                                x-init="charCount = $refs.metaDesc.value.length"
+                                @input="charCount = $refs.metaDesc.value.length">{{ spec_data.seo.meta_description }}</textarea>
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5 block">SEO
