@@ -37,22 +37,31 @@ db.init_app(app)
 # Ensure database and uploads directory exist (Runs even under Gunicorn)
 with app.app_context():
     if not os.path.exists('instance'): os.makedirs('instance')
-    db.create_all()
+    
+    # Use checkfirst=True for compatibility with older SQLAlchemy versions
+    with db.engine.connect() as conn:
+        db.metadata.create_all(bind=conn, checkfirst=True)
+        conn.commit()
+    
     if not os.path.exists(app.config['UPLOAD_FOLDER']): os.makedirs(app.config['UPLOAD_FOLDER'])
     
-    # Seed default admin account on first run
-    if not User.query.filter_by(role='admin').first():
-        admin = User(
-            username='admin',
-            email='admin@jkalachand.com',
-            role='admin',
-            display_name='System Admin',
-            is_active=True
-        )
-        admin.set_password('admin123')
-        db.session.add(admin)
-        db.session.commit()
-        print('✅ Default admin account created: admin@jkalachand.com / admin123')
+    # Seed default admin account on first run (wrapped in try/except for Gunicorn multi-worker safety)
+    try:
+        if not User.query.filter_by(role='admin').first():
+            admin = User(
+                username='admin',
+                email='admin@jkalachand.com',
+                role='admin',
+                display_name='System Admin',
+                is_active=True
+            )
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            print('✅ Default admin account created: admin@jkalachand.com / admin123')
+    except Exception:
+        db.session.rollback()
+        print('ℹ️ Admin account already exists or seed skipped (multi-worker race)')
 
 
 # Import utility functions from utils package
