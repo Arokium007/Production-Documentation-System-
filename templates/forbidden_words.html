@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div x-data="forbiddenWordsManager()" x-init="init()">
+<div x-data="forbiddenWordsManager()" x-init="init()" x-cloak>
 
     <!-- Section Header -->
     <div class="mb-6 relative rounded-2xl bg-white border border-gray-100 p-8 shadow-sm overflow-hidden">
@@ -44,6 +44,22 @@
             </div>
         </div>
 
+        <!-- Search Bar -->
+        <div class="px-6 py-3 border-b border-gray-100 bg-white">
+            <div class="relative max-w-md">
+                <svg class="w-4 h-4 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input x-model="search" type="text" placeholder="Search categories or words..."
+                    class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-transparent focus:bg-white focus:border-indigo-100 focus:ring-4 focus:ring-indigo-50 rounded-lg text-sm font-medium transition-all outline-none placeholder-gray-400">
+                <button x-show="search.length > 0" @click="search = ''" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
         <!-- Cat B Accordion Groups -->
         <div class="p-6 bg-slate-50/50 space-y-4">
 
@@ -51,7 +67,8 @@
             <template x-if="selectedCatA === '{{ cat_a }}'">
                 <div class="space-y-3">
                     {% for cat_b, cat_c_list in cat_b_map.items() %}
-                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div x-show="matchesGroupSearch('{{ cat_b }}', {{ cat_c_list | tojson }})"
+                        class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                         
                         <!-- Cat B Header (Collapsible) -->
                         <button @click="toggleGroup('{{ cat_a }}__{{ cat_b }}')"
@@ -75,7 +92,7 @@
                         <div x-show="openGroups['{{ cat_a }}__{{ cat_b }}']" x-collapse>
                             <div class="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                 {% for cat_c in cat_c_list %}
-                                <div class="border border-gray-100 rounded-xl p-4 bg-slate-50/50 hover:border-indigo-100 transition-colors">
+                                <div x-show="matchesCatSearch('{{ cat_c }}')" class="border border-gray-100 rounded-xl p-4 bg-slate-50/50 hover:border-indigo-100 transition-colors">
                                     
                                     <!-- Cat C Header -->
                                     <div class="flex items-center justify-between mb-3">
@@ -130,6 +147,7 @@ function forbiddenWordsManager() {
         selectedCatA: '{{ category_tree.keys()|list|first if category_tree else "" }}',
         openGroups: {},
         words: {},
+        search: '',
         
         get totalWords() {
             let count = 0;
@@ -151,6 +169,21 @@ function forbiddenWordsManager() {
         
         toggleGroup(key) {
             this.openGroups[key] = !this.openGroups[key];
+        },
+        
+        matchesCatSearch(catC) {
+            if (!this.search.trim()) return true;
+            const q = this.search.trim().toLowerCase();
+            if (catC.toLowerCase().includes(q)) return true;
+            const catWords = this.words[catC] || [];
+            return catWords.some(w => w.toLowerCase().includes(q));
+        },
+        
+        matchesGroupSearch(catB, catCList) {
+            if (!this.search.trim()) return true;
+            const q = this.search.trim().toLowerCase();
+            if (catB.toLowerCase().includes(q)) return true;
+            return catCList.some(c => this.matchesCatSearch(c));
         },
         
         async addWord(category, word) {
