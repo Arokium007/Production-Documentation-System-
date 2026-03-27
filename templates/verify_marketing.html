@@ -483,13 +483,6 @@
                         </div>
                         <!-- Action Buttons -->
                         <div class="flex items-center gap-2 mt-3">
-                            <button type="button" id="searchImagesBtn" onclick="searchProductImages()"
-                                class="flex-1 text-[11px] font-bold text-white bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 px-3 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                </svg>
-                                AI Search
-                            </button>
                             <input type="file" id="imageUploadInput" class="hidden" accept="image/*" multiple
                                 onchange="uploadImage(this)">
                             <button type="button" onclick="document.getElementById('imageUploadInput').click()"
@@ -525,13 +518,6 @@
                                         </svg>
                                     </div>
                                     <p class="text-[11px] text-gray-400 font-medium">No main image</p>
-                                    <button type="button" onclick="searchProductImages()"
-                                        class="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                        </svg>
-                                        Search with AI
-                                    </button>
                                 </div>
                                 {% endif %}
                             </div>
@@ -1218,34 +1204,7 @@
         }
     }
 
-    // --- AI Image Search ---
-    async function searchProductImages() {
-        const btn = document.getElementById('searchImagesBtn');
-        const origHTML = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Searching...`;
-        btn.classList.add('opacity-60');
 
-        try {
-            const response = await fetch(`/api/product/{{ product.id }}/search-images`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const result = await response.json();
-
-            if (result.error) {
-                btn.innerHTML = `<svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> ${result.error}`;
-                setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; btn.classList.remove('opacity-60'); }, 3000);
-            } else {
-                btn.innerHTML = `<svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Found ${result.count} images!`;
-                btn.classList.remove('opacity-60');
-                setTimeout(() => location.reload(), 1500);
-            }
-        } catch (error) {
-            btn.innerHTML = `<svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> Search failed`;
-            setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; btn.classList.remove('opacity-60'); }, 3000);
-        }
-    }
 </script>
 
 {% include 'partials/version_history_panel.html' %}
